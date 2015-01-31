@@ -956,6 +956,9 @@ config TOUCHSCREEN_MAX1187X
 
           If unsure, say N.
 
+config TOUCH_BOOST
+       bool "Touch Boost"
+
 config WAKE_GESTURES
         bool "Wake Gestures"
 
