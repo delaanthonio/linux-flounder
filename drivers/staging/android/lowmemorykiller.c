@@ -76,7 +76,6 @@ static unsigned long lowmem_deathpending_timeout;
 			pr_info(x);			\
 	} while (0)
 
-
 static int can_use_cma_pages(struct zone *zone, gfp_t gfp_mask)
 {
 	int can_use = 0;
@@ -132,18 +131,18 @@ static int lmk_nr_free_pages(gfp_t gfp_mask)
 
 static int test_task_flag(struct task_struct *p, int flag)
 {
-	struct task_struct *t = p;
+    struct task_struct *t;
 
-	do {
-		task_lock(t);
-		if (test_tsk_thread_flag(t, flag)) {
-			task_unlock(t);
-			return 1;
-		}
-		task_unlock(t);
-	} while_each_thread(p, t);
+    for_each_thread(p, t) {
+        task_lock(t);
+        if (test_tsk_thread_flag(t, flag)) {
+            task_unlock(t);
+            return 1;
+        }
+        task_unlock(t);
+    }
 
-	return 0;
+    return 0;
 }
 
 static DEFINE_MUTEX(scan_mutex);
