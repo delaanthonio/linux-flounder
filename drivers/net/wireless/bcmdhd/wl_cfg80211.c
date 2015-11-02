@@ -10085,7 +10085,6 @@ static s32 wl_notify_escan_complete(struct bcm_cfg80211 *cfg,
 	s32 err = BCME_OK;
 	unsigned long flags;
 	struct net_device *dev;
-	int count;
 
 	WL_DBG(("Enter \n"));
 	if (!ndev) {
