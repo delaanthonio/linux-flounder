@@ -19,7 +19,36 @@ LIBGCC 		:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
 
 KBUILD_DEFCONFIG := defconfig
 
-KBUILD_CFLAGS	+= -mgeneral-regs-only
+GRAPHITE_FLAGS := \
+	-fgraphite \
+	-fgraphite-identity \
+	-floop-flatten \
+	-ftree-loop-linear \
+	-floop-interchange \
+	-floop-strip-mine \
+	-floop-block \
+
+DENVER_FLAGS := \
+	--param l1-cache-line-size=64 \
+	--param l1-cache-size=192 \
+	--param l2-cache-size=2048 \
+	-mtune=cortex-a57
+
+KERNEL_FLAGS := \
+        $(DENVER_FLAGS) \
+        -fsingle-precision-constant  \
+        -Wno-error=maybe-uninitialized \
+        -Wno-error=array-bounds \
+
+ifeq ($(CONFIG_ENABLE_GRAPHITE), y)
+KERNEL_FLAGS += $(GRAPHITE_FLAGS)
+endif
+
+ifeq ($(CONFIG_ENABLE_LEAK_SANITIZER), y)
+KERNEL_FLAGS += -fsanitize=leak
+endif
+
+KBUILD_CFLAGS	+= -mgeneral-regs-only $(KERNEL_FLAGS)
 KBUILD_CFLAGS	+= -fno-pic
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
