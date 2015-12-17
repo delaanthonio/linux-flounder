@@ -128,6 +128,7 @@ static void *get_cpu_dbs_info_s(int cpu)				\
  * od_*: On-demand governor
  * cs_*: Conservative governor
  * ex_*: ElementalX governor
+ * sb_*: Sublime governor
  */
 
 /* Per cpu structures */
@@ -170,6 +171,13 @@ struct cs_cpu_dbs_info_s {
 	unsigned int enable:1;
 };
 
+struct sb_cpu_dbs_info_s {
+	struct cpu_dbs_common_info cdbs;
+	unsigned int down_skip;
+	unsigned int requested_freq;
+	unsigned int enable:1;
+};
+
 struct ex_cpu_dbs_info_s {
 	struct cpu_dbs_common_info cdbs;
 	bool input_event_boost;
@@ -197,6 +205,18 @@ struct cs_dbs_tuners {
 	unsigned int freq_step;
 };
 
+struct sb_dbs_tuners {
+	unsigned int ignore_nice_load;
+	unsigned int sampling_rate;
+	unsigned int sampling_down_factor;
+	unsigned int up_threshold;
+	unsigned int micro_up_threshold;
+	unsigned int down_threshold;
+	unsigned int freq_step;
+	unsigned int micro_freq_step;
+	unsigned int optimal_frequency;
+};
+
 struct ex_dbs_tuners {
 	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
@@ -214,7 +234,8 @@ struct common_dbs_data {
 	/* Common across governors */
 	#define GOV_ONDEMAND		0
 	#define GOV_CONSERVATIVE	1
-	#define GOV_ELEMENTALX	2
+	#define GOV_ELEMENTALX		2
+	#define GOV_SUBLIME			3
 	int governor;
 	struct attribute_group *attr_group_gov_sys; /* one governor - system */
 	struct attribute_group *attr_group_gov_pol; /* one governor - policy */
@@ -253,6 +274,10 @@ struct od_ops {
 };
 
 struct cs_ops {
+	struct notifier_block *notifier_block;
+};
+
+struct sb_ops {
 	struct notifier_block *notifier_block;
 };
 
