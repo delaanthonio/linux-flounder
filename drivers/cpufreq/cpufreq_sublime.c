@@ -36,6 +36,8 @@
 #define DEF_SAMPLING_DOWN_FACTOR			(1)
 #define MAX_SAMPLING_DOWN_FACTOR			(10)
 #define OPTIMAL_FREQUENCY					(1836000)
+#define MAX(x,y)				(x > y ? x : y)
+#define MIN(x,y)				(x < y ? x : y)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
@@ -44,7 +46,7 @@ static inline unsigned int get_freq_target(struct sb_dbs_tuners *sb_tuners,
 {
 	unsigned int freq_target = (sb_tuners->freq_step * policy->max) / 100;
 
-	/* max freq cannot be less than 100. But who knows... */
+	/* max frequency cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
 		freq_target = DEF_FREQUENCY_STEP;
 
@@ -56,7 +58,7 @@ static inline unsigned int get_micro_freq_target(struct sb_dbs_tuners *sb_tuners
 {
 	unsigned int freq_target = (sb_tuners->micro_freq_step * policy->max) / 100;
 
-	/* max freq cannot be less than 100. But who knows... */
+	/* max frequency cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
 		freq_target = DEF_MICRO_FREQUENCY_STEP;
 
@@ -100,9 +102,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	        dbs_info->requested_freq = sb_tuners->optimal_frequency;
 	    } else {
 	        dbs_info->requested_freq += get_micro_freq_target(sb_tuners, policy);
-	        // Make sure the requested freq isn't greater than the max freq
-	        if (dbs_info->requested_freq > policy->max)
-	            dbs_info->requested_freq = policy->max;
+	        // Make sure the requested frequency is at most the maximum frequency
+          dbs_info->requested_freq = MIN(dbs_info->requested_freq, policy->max);
 	    }
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
@@ -119,32 +120,31 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	        return;
 
 	    dbs_info->requested_freq += get_freq_target(sb_tuners, policy);
-	    if (dbs_info->requested_freq > sb_tuners->optimal_frequency)
-	        dbs_info->requested_freq = sb_tuners->optimal_frequency;
+
+			// Ensure the requested frequency is at most the optimal frequency
+	    dbs_info->requested_freq = MIN(dbs_info->requested_freq, sb_tuners->optimal_frequency);
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
 	        CPUFREQ_RELATION_H);
 	    return;
 	}
 
-	/* if sampling_down_factor is active break out early */
+	// if sampling_down_factor is active break out early
 	if (++dbs_info->down_skip < sb_tuners->sampling_down_factor)
 		return;
 	dbs_info->down_skip = 0;
 
 	/* Check for frequency decrease */
 	if (load < sb_tuners->down_threshold) {
-		/*
-		 * break out early if the frequency is already at the minimum
-		 */
+
+		// break out early if the frequency is set to the minimum
 		if (policy->cur == policy->min)
 			return;
 
 		freq_target = get_freq_target(sb_tuners, policy);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
-			if (dbs_info->requested_freq < policy->min)
-				dbs_info->requested_freq = policy->min;
+			dbs_info->requested_freq = MAX (dbs_info->requested_freq, policy->min);
 		} else
 			dbs_info->requested_freq = policy->min;
 
@@ -190,7 +190,7 @@ static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 	policy = dbs_info->cdbs.cur_policy;
 
 	/*
-	 * we only care if our internally tracked freq moves outside the 'valid'
+	 * we only care if our internally tracked frequency moves outside the 'valid'
 	 * ranges of frequency available to us otherwise we do not change it
 	*/
 	if (dbs_info->requested_freq > policy->max
@@ -271,7 +271,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	/* cannot be lower than 11 otherwise freq will not fall */
+	/* cannot be lower than 11 otherwise frequency will not fall */
 	if (ret != 1 || input < 11 || input > 100 ||
 			input >= sb_tuners->up_threshold)
 		return -EINVAL;
