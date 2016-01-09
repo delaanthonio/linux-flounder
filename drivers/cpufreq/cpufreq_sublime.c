@@ -58,7 +58,7 @@ static inline unsigned int get_micro_freq_target(struct sb_dbs_tuners *sb_tuners
 
 	/* max freq cannot be less than 100. But who knows... */
 	if (unlikely(freq_target == 0))
-		freq_target = DEF_FREQUENCY_STEP;
+		freq_target = DEF_MICRO_FREQUENCY_STEP;
 
 	return freq_target;
 }
@@ -95,7 +95,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == policy->max)
 	        return;
 
-	    // Jump to optimal frequency if the current policy is below it
+	    // Jump to the optimal frequency if the current policy is below it
 	    if (dbs_info->requested_freq < sb_tuners->optimal_frequency){
 	        dbs_info->requested_freq = sb_tuners->optimal_frequency;
 	    } else {
