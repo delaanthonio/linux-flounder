@@ -38,12 +38,18 @@ DENVER_FLAGS := \
 	-mtune=cortex-a57
 
 KERNEL_FLAGS := \
-    $(GRAPHITE_FLAGS) \
-	$(DENVER_FLAGS) \
-	-fsingle-precision-constant  \
-	-fsanitize=leak \
-	-Wno-error=maybe-uninitialized \
-    -Wno-error=array-bounds \
+        $(DENVER_FLAGS) \
+        -fsingle-precision-constant  \
+        -Wno-error=maybe-uninitialized \
+        -Wno-error=array-bounds \
+
+ifeq ($(CONFIG_ENABLE_GRAPHITE), y)
+KERNEL_FLAGS += $(GRAPHITE_FLAGS)
+endif
+
+ifeq ($(CONFIG_ENABLE_LEAK_SANITIZER), y)
+KERNEL_FLAGS += -fsanitize=leak
+endif
 
 CFLAGS_KERNEL += $(KERNEL_FLAGS)
 AFLAGS_KERNEL += $(KERNEL_FLAGS)
