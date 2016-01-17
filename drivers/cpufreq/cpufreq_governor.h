@@ -212,6 +212,7 @@ struct sb_dbs_tuners {
 	unsigned int up_threshold;
 	unsigned int micro_up_threshold;
 	unsigned int down_threshold;
+	unsigned int micro_down_threshold;
 	unsigned int freq_step;
 	unsigned int micro_freq_step;
 	unsigned int optimal_frequency;

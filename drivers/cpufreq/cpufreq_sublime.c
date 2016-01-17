@@ -28,16 +28,17 @@
 #include "cpufreq_governor.h"
 
 /* Sublime governor macros */
-#define DEF_MICRO_FREQUENCY_UP_THRESHOLD	(80)
-#define DEF_FREQUENCY_UP_THRESHOLD			(60)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(25)
-#define DEF_FREQUENCY_STEP					(8)
-#define DEF_MICRO_FREQUENCY_STEP			(3)
-#define DEF_SAMPLING_DOWN_FACTOR			(1)
-#define MAX_SAMPLING_DOWN_FACTOR			(10)
-#define OPTIMAL_FREQUENCY					(1836000)
-#define MAX(x,y)				(x > y ? x : y)
-#define MIN(x,y)				(x < y ? x : y)
+#define DEF_FREQUENCY_UP_THRESHOLD          (60)
+#define DEF_MICRO_FREQUENCY_UP_THRESHOLD    (80)
+#define DEF_FREQUENCY_DOWN_THRESHOLD        (10)
+#define DEF_MICRO_FREQUENCY_DOWN_THRESHOLD  (20)
+#define DEF_FREQUENCY_STEP                  (8)
+#define DEF_MICRO_FREQUENCY_STEP            (3)
+#define DEF_SAMPLING_DOWN_FACTOR            (1)
+#define MAX_SAMPLING_DOWN_FACTOR            (10)
+#define OPTIMAL_FREQUENCY                   (1836000)
+#define MAX(x,y)                            (x > y ? x : y)
+#define MIN(x,y)                            (x < y ? x : y)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
@@ -142,6 +143,25 @@ static void sb_check_cpu(int cpu, unsigned int load)
 			return;
 
 		freq_target = get_freq_target(sb_tuners, policy);
+		if (dbs_info->requested_freq > freq_target) {
+			dbs_info->requested_freq -= freq_target;
+			dbs_info->requested_freq = MAX (dbs_info->requested_freq, policy->min);
+		} else
+			dbs_info->requested_freq = policy->min;
+
+		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+				CPUFREQ_RELATION_L);
+		return;
+	}
+
+	/* Check for micro frequency decrease */
+	if (load < sb_tuners->micro_down_threshold) {
+
+		// break out early if the frequency is set to the minimum
+		if (policy->cur == policy->min)
+			return;
+
+		freq_target = get_micro_freq_target(sb_tuners, policy);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
 			dbs_info->requested_freq = MAX (dbs_info->requested_freq, policy->min);
@@ -280,6 +300,23 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	return count;
 }
 
+static ssize_t store_micro_down_threshold(struct dbs_data *dbs_data, const char *buf,
+		size_t count)
+{
+	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	/* cannot be lower than the down threshold frequency will not fall */
+	if (ret != 1 || sb_tuners->down_threshold < 11 || input > 100 ||
+			input >= sb_tuners->up_threshold)
+		return -EINVAL;
+
+	sb_tuners->micro_down_threshold = input;
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct dbs_data *dbs_data,
 		const char *buf, size_t count)
 {
@@ -384,6 +421,7 @@ show_store_one(sb, sampling_down_factor);
 show_store_one(sb, up_threshold);
 show_store_one(sb, micro_up_threshold);
 show_store_one(sb, down_threshold);
+show_store_one(sb, micro_down_threshold);
 show_store_one(sb, ignore_nice_load);
 show_store_one(sb, freq_step);
 show_store_one(sb, micro_freq_step);
@@ -392,9 +430,10 @@ declare_show_sampling_rate_min(sb);
 
 gov_sys_pol_attr_rw(sampling_rate);
 gov_sys_pol_attr_rw(sampling_down_factor);
-gov_sys_pol_attr_rw(micro_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
+gov_sys_pol_attr_rw(micro_up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
+gov_sys_pol_attr_rw(micro_down_threshold);
 gov_sys_pol_attr_rw(ignore_nice_load);
 gov_sys_pol_attr_rw(freq_step);
 gov_sys_pol_attr_rw(micro_freq_step);
@@ -405,9 +444,10 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	&sampling_rate_min_gov_sys.attr,
 	&sampling_rate_gov_sys.attr,
 	&sampling_down_factor_gov_sys.attr,
-	&micro_up_threshold_gov_sys.attr,
 	&up_threshold_gov_sys.attr,
+	&micro_up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr,
+	&micro_down_threshold_gov_sys.attr,
 	&ignore_nice_load_gov_sys.attr,
 	&optimal_frequency_gov_sys.attr,
 	&freq_step_gov_sys.attr,
@@ -427,6 +467,7 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&micro_up_threshold_gov_pol.attr,
 	&up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr,
+	&micro_down_threshold_gov_pol.attr,
 	&ignore_nice_load_gov_pol.attr,
 	&optimal_frequency_gov_pol.attr,
 	&freq_step_gov_pol.attr,
@@ -454,6 +495,7 @@ static int sb_init(struct dbs_data *dbs_data)
 	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
 	tuners->micro_up_threshold = DEF_MICRO_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
+	tuners->micro_down_threshold = DEF_MICRO_FREQUENCY_DOWN_THRESHOLD;
 	tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
