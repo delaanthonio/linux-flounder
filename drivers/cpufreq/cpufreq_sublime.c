@@ -295,7 +295,7 @@ static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 100 || input <= sb_tuners->down_threshold)
+	if (ret != 1 || input > 100 || input <= sb_tuners->micro_down_threshold)
 		return -EINVAL;
 
 	sb_tuners->up_threshold = input;
@@ -327,7 +327,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 
 	/* cannot be lower than 11 otherwise frequency will not fall */
 	if (ret != 1 || input < 11 || input > 100 ||
-			input >= sb_tuners->up_threshold)
+			input >= sb_tuners->micro_up_threshold)
 		return -EINVAL;
 
 	sb_tuners->down_threshold = input;
