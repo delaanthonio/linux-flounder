@@ -28,17 +28,18 @@
 #include "cpufreq_governor.h"
 
 /* Sublime governor macros */
-#define DEF_FREQUENCY_UP_THRESHOLD          (60)
-#define DEF_MICRO_FREQUENCY_UP_THRESHOLD    (80)
-#define DEF_FREQUENCY_DOWN_THRESHOLD        (10)
-#define DEF_MICRO_FREQUENCY_DOWN_THRESHOLD  (20)
-#define DEF_FREQUENCY_STEP                  (8)
-#define DEF_MICRO_FREQUENCY_STEP            (3)
-#define DEF_SAMPLING_DOWN_FACTOR            (1)
-#define MAX_SAMPLING_DOWN_FACTOR            (10)
-#define OPTIMAL_FREQUENCY                   (1836000)
-#define MAX(x,y)                            (x > y ? x : y)
-#define MIN(x,y)                            (x < y ? x : y)
+#define DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD (85)
+#define DEF_FREQUENCY_UP_THRESHOLD           (80)
+#define DEF_MICRO_FREQUENCY_UP_THRESHOLD     (70)
+#define DEF_FREQUENCY_DOWN_THRESHOLD         (25)
+#define DEF_MICRO_FREQUENCY_DOWN_THRESHOLD   (40)
+#define DEF_FREQUENCY_STEP                   (8)
+#define DEF_MICRO_FREQUENCY_STEP             (3)
+#define DEF_SAMPLING_DOWN_FACTOR             (1)
+#define MAX_SAMPLING_DOWN_FACTOR             (10)
+#define DEF_HIGHSPEED_FREQUENCY              (1734000)
+#define MAX(x,y)                             (x > y ? x : y)
+#define MIN(x,y)                             (x < y ? x : y)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
@@ -90,21 +91,21 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	if (sb_tuners->freq_step == 0)
 		return;
 
-	/* Check for micro frequency increase */
-	if (load > sb_tuners->micro_up_threshold) {
+	/* Check for high-speed frequency increase */
+	if (load > sb_tuners->highspeed_up_threshold) {
 	    dbs_info->down_skip = 0;
 
 	    // Stop if the current speed is already the maximum
 	    if (dbs_info->requested_freq == policy->max)
 	        return;
 
-	    // Jump to the optimal frequency if the current policy is below it
-	    if (dbs_info->requested_freq < sb_tuners->optimal_frequency){
-	        dbs_info->requested_freq = sb_tuners->optimal_frequency;
+	    // Jump to the high-speed frequency if the current policy is below it
+	    if (dbs_info->requested_freq < sb_tuners->highspeed_freq){
+	        dbs_info->requested_freq = sb_tuners->highspeed_freq;
 	    } else {
 	        dbs_info->requested_freq += get_micro_freq_target(sb_tuners, policy);
 	        // Make sure the requested frequency is at most the maximum frequency
-          dbs_info->requested_freq = MIN(dbs_info->requested_freq, policy->max);
+                dbs_info->requested_freq = MIN(dbs_info->requested_freq, policy->max);
 	    }
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
@@ -116,19 +117,37 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	else if (load >= sb_tuners->up_threshold) {
 	    dbs_info->down_skip = 0;
 
-	    /* break out early if the optimal speed is already set */
-	    if (dbs_info->requested_freq == sb_tuners->optimal_frequency)
+	    /* break out early if the high-speed freq is already set */
+	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
 	        return;
 
 	    dbs_info->requested_freq += get_freq_target(sb_tuners, policy);
 
-			// Ensure the requested frequency is at most the optimal frequency
-	    dbs_info->requested_freq = MIN(dbs_info->requested_freq, sb_tuners->optimal_frequency);
+            // Ensure the requested frequency is at most the high-speed frequency
+	    dbs_info->requested_freq = MIN(dbs_info->requested_freq, sb_tuners->highspeed_freq);
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
 	        CPUFREQ_RELATION_H);
 	    return;
 	}
+
+        /* Check for micro frequency increase */
+	if (load > sb_tuners->micro_up_threshold) {
+	    dbs_info->down_skip = 0;
+
+	    // Stop if the current speed is already the high-speed frequency
+	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
+	        return;
+
+	    // Jump to the high-speed frequency if the current policy is below it
+            dbs_info->requested_freq += get_micro_freq_target(sb_tuners, policy);
+            dbs_info->requested_freq = MIN(dbs_info->requested_freq, sb_tuners->highspeed_freq);
+
+	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
+                                    CPUFREQ_RELATION_H);
+	    return;
+	    }
+
 
 	// if sampling_down_factor is active break out early
 	if (++dbs_info->down_skip < sb_tuners->sampling_down_factor)
@@ -251,6 +270,21 @@ static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 
 	sb_tuners->sampling_rate = max(input, dbs_data->min_sampling_rate);
 	return count;
+}
+
+static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const char *buf,
+                                  size_t count)
+{
+    struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+    unsigned int input;
+    int ret;
+    ret = sscanf(buf, "%u", &input);
+
+    if (ret != 1 || input > 100 || input <= sb_tuners->micro_down_threshold)
+        return -EINVAL;
+
+    sb_tuners->highspeed_up_threshold = input;
+    return count;
 }
 
 static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
@@ -392,7 +426,7 @@ static ssize_t store_micro_freq_step(struct dbs_data *dbs_data, const char *buf,
 	return count;
 }
 
-static ssize_t store_optimal_frequency(struct dbs_data *dbs_data, const char *buf,
+static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
@@ -403,21 +437,21 @@ static ssize_t store_optimal_frequency(struct dbs_data *dbs_data, const char *bu
 	ret = sscanf(buf, "%u", &input);
 
         if (ret != 1)
-               return -EINVAL;
+                return -EINVAL;
 
         if (input < policy->min)
-               sb_tuners->optimal_frequency = policy->min;
+                input = policy->min;
 
         else if (input > policy->max)
-               sb_tuners->optimal_frequency = policy->max;
-        else
-               sb_tuners->optimal_frequency = input;
+                input  = policy->max;
 
+        sb_tuners->highspeed_freq = input;
 	return count;
 }
 
 show_store_one(sb, sampling_rate);
 show_store_one(sb, sampling_down_factor);
+show_store_one(sb, highspeed_up_threshold);
 show_store_one(sb, up_threshold);
 show_store_one(sb, micro_up_threshold);
 show_store_one(sb, down_threshold);
@@ -425,11 +459,12 @@ show_store_one(sb, micro_down_threshold);
 show_store_one(sb, ignore_nice_load);
 show_store_one(sb, freq_step);
 show_store_one(sb, micro_freq_step);
-show_store_one(sb, optimal_frequency);
+show_store_one(sb, highspeed_freq);
 declare_show_sampling_rate_min(sb);
 
 gov_sys_pol_attr_rw(sampling_rate);
 gov_sys_pol_attr_rw(sampling_down_factor);
+gov_sys_pol_attr_rw(highspeed_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(micro_up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
@@ -437,19 +472,20 @@ gov_sys_pol_attr_rw(micro_down_threshold);
 gov_sys_pol_attr_rw(ignore_nice_load);
 gov_sys_pol_attr_rw(freq_step);
 gov_sys_pol_attr_rw(micro_freq_step);
-gov_sys_pol_attr_ro(optimal_frequency);
+gov_sys_pol_attr_ro(highspeed_freq);
 gov_sys_pol_attr_ro(sampling_rate_min);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
 	&sampling_rate_min_gov_sys.attr,
 	&sampling_rate_gov_sys.attr,
 	&sampling_down_factor_gov_sys.attr,
+	&highspeed_up_threshold_gov_sys.attr,
 	&up_threshold_gov_sys.attr,
 	&micro_up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr,
 	&micro_down_threshold_gov_sys.attr,
 	&ignore_nice_load_gov_sys.attr,
-	&optimal_frequency_gov_sys.attr,
+	&highspeed_freq_gov_sys.attr,
 	&freq_step_gov_sys.attr,
 	&micro_freq_step_gov_sys.attr,
 	NULL
@@ -464,12 +500,13 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&sampling_rate_min_gov_pol.attr,
 	&sampling_rate_gov_pol.attr,
 	&sampling_down_factor_gov_pol.attr,
-	&micro_up_threshold_gov_pol.attr,
+	&highspeed_up_threshold_gov_pol.attr,
 	&up_threshold_gov_pol.attr,
+	&micro_up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr,
 	&micro_down_threshold_gov_pol.attr,
 	&ignore_nice_load_gov_pol.attr,
-	&optimal_frequency_gov_pol.attr,
+	&highspeed_freq_gov_pol.attr,
 	&freq_step_gov_pol.attr,
 	&micro_freq_step_gov_pol.attr,
 	NULL
@@ -491,7 +528,7 @@ static int sb_init(struct dbs_data *dbs_data)
 		pr_err("%s: kzalloc failed\n", __func__);
 		return -ENOMEM;
 	}
-
+        tuners->highspeed_up_threshold = DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD;
 	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
 	tuners->micro_up_threshold = DEF_MICRO_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
@@ -500,7 +537,7 @@ static int sb_init(struct dbs_data *dbs_data)
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
 	tuners->micro_freq_step = DEF_MICRO_FREQUENCY_STEP;
-	tuners->optimal_frequency = OPTIMAL_FREQUENCY;
+	tuners->highspeed_freq = DEF_HIGHSPEED_FREQUENCY;
 
 	dbs_data->tuners = tuners;
 	dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *

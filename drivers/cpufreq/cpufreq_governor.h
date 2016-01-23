@@ -208,14 +208,15 @@ struct cs_dbs_tuners {
 struct sb_dbs_tuners {
 	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
-	unsigned int sampling_down_factor;
-	unsigned int up_threshold;
+        unsigned int sampling_down_factor;
+        unsigned int highspeed_up_threshold;
+        unsigned int up_threshold;
 	unsigned int micro_up_threshold;
 	unsigned int down_threshold;
 	unsigned int micro_down_threshold;
 	unsigned int freq_step;
 	unsigned int micro_freq_step;
-	unsigned int optimal_frequency;
+	unsigned int highspeed_freq;
 };
 
 struct ex_dbs_tuners {
@@ -233,10 +234,10 @@ struct ex_dbs_tuners {
 struct dbs_data;
 struct common_dbs_data {
 	/* Common across governors */
-	#define GOV_ONDEMAND		0
-	#define GOV_CONSERVATIVE	1
-	#define GOV_ELEMENTALX		2
-	#define GOV_SUBLIME			3
+	#define GOV_ONDEMAND            0
+	#define GOV_CONSERVATIVE        1
+	#define GOV_ELEMENTALX          2
+	#define GOV_SUBLIME             3
 	int governor;
 	struct attribute_group *attr_group_gov_sys; /* one governor - system */
 	struct attribute_group *attr_group_gov_pol; /* one governor - policy */
