@@ -473,7 +473,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		} else if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
 			ex_dbs_info->enable = 1;
 		} else if (dbs_data->cdata->governor == GOV_SUBLIME) {
-			sb_dbs_info->down_skip = 0;
 			sb_dbs_info->enable = 1;
 			sb_dbs_info->requested_freq = policy->cur;
 		} else {

@@ -173,7 +173,6 @@ struct cs_cpu_dbs_info_s {
 
 struct sb_cpu_dbs_info_s {
 	struct cpu_dbs_common_info cdbs;
-	unsigned int down_skip;
 	unsigned int requested_freq;
 	unsigned int enable:1;
 };
@@ -208,7 +207,6 @@ struct cs_dbs_tuners {
 struct sb_dbs_tuners {
 	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
-        unsigned int sampling_down_factor;
         unsigned int highspeed_up_threshold;
         unsigned int up_threshold;
 	unsigned int micro_up_threshold;

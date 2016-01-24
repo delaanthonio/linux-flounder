@@ -35,8 +35,6 @@
 #define DEF_MICRO_FREQUENCY_DOWN_THRESHOLD   (40)
 #define DEF_FREQUENCY_STEP                   (8)
 #define DEF_MICRO_FREQUENCY_STEP             (3)
-#define DEF_SAMPLING_DOWN_FACTOR             (1)
-#define MAX_SAMPLING_DOWN_FACTOR             (10)
 #define DEF_HIGHSPEED_FREQUENCY              (1734000)
 #define MAX(x,y)                             (x > y ? x : y)
 #define MIN(x,y)                             (x < y ? x : y)
@@ -93,7 +91,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
 	/* Check for high-speed frequency increase */
 	if (load > sb_tuners->highspeed_up_threshold) {
-	    dbs_info->down_skip = 0;
 
 	    // Stop if the current speed is already the maximum
 	    if (dbs_info->requested_freq == policy->max)
@@ -115,7 +112,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
 	/* Check for frequency increase */
 	else if (load >= sb_tuners->up_threshold) {
-	    dbs_info->down_skip = 0;
 
 	    /* break out early if the high-speed freq is already set */
 	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
@@ -133,7 +129,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
         /* Check for micro frequency increase */
 	if (load > sb_tuners->micro_up_threshold) {
-	    dbs_info->down_skip = 0;
 
 	    // Stop if the current speed is already the high-speed frequency
 	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
@@ -148,11 +143,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    return;
 	    }
 
-
-	// if sampling_down_factor is active break out early
-	if (++dbs_info->down_skip < sb_tuners->sampling_down_factor)
-		return;
-	dbs_info->down_skip = 0;
 
 	/* Check for frequency decrease */
 	if (load < sb_tuners->down_threshold) {
@@ -241,21 +231,6 @@ static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 
 /************************** sysfs interface ************************/
 static struct common_dbs_data sb_dbs_cdata;
-
-static ssize_t store_sampling_down_factor(struct dbs_data *dbs_data,
-		const char *buf, size_t count)
-{
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
-
-	if (ret != 1 || input > MAX_SAMPLING_DOWN_FACTOR || input < 1)
-		return -EINVAL;
-
-	sb_tuners->sampling_down_factor = input;
-	return count;
-}
 
 static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
@@ -450,7 +425,6 @@ static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 }
 
 show_store_one(sb, sampling_rate);
-show_store_one(sb, sampling_down_factor);
 show_store_one(sb, highspeed_up_threshold);
 show_store_one(sb, up_threshold);
 show_store_one(sb, micro_up_threshold);
@@ -463,7 +437,6 @@ show_store_one(sb, highspeed_freq);
 declare_show_sampling_rate_min(sb);
 
 gov_sys_pol_attr_rw(sampling_rate);
-gov_sys_pol_attr_rw(sampling_down_factor);
 gov_sys_pol_attr_rw(highspeed_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(micro_up_threshold);
@@ -478,7 +451,6 @@ gov_sys_pol_attr_ro(sampling_rate_min);
 static struct attribute *dbs_attributes_gov_sys[] = {
 	&sampling_rate_min_gov_sys.attr,
 	&sampling_rate_gov_sys.attr,
-	&sampling_down_factor_gov_sys.attr,
 	&highspeed_up_threshold_gov_sys.attr,
 	&up_threshold_gov_sys.attr,
 	&micro_up_threshold_gov_sys.attr,
@@ -499,7 +471,6 @@ static struct attribute_group sb_attr_group_gov_sys = {
 static struct attribute *dbs_attributes_gov_pol[] = {
 	&sampling_rate_min_gov_pol.attr,
 	&sampling_rate_gov_pol.attr,
-	&sampling_down_factor_gov_pol.attr,
 	&highspeed_up_threshold_gov_pol.attr,
 	&up_threshold_gov_pol.attr,
 	&micro_up_threshold_gov_pol.attr,
@@ -533,7 +504,6 @@ static int sb_init(struct dbs_data *dbs_data)
 	tuners->micro_up_threshold = DEF_MICRO_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
 	tuners->micro_down_threshold = DEF_MICRO_FREQUENCY_DOWN_THRESHOLD;
-	tuners->sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR;
 	tuners->ignore_nice_load = 0;
 	tuners->freq_step = DEF_FREQUENCY_STEP;
 	tuners->micro_freq_step = DEF_MICRO_FREQUENCY_STEP;
