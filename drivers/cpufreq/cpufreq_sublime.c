@@ -43,6 +43,7 @@
 #define BASE_FREQUENCY_DOWN_DELTA            (15000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
 #define FREQUENCY_DELTA_RESISTANCE           (100)
+#define MINIMUM_SAMPLING_RATE                (15000)
 #define MAX(x,y)                             (x > y ? x : y)
 #define MIN(x,y)                             (x < y ? x : y)
 
@@ -501,8 +502,7 @@ static int sb_init(struct dbs_data *dbs_data)
 	tuners->highspeed_freq = DEF_HIGHSPEED_FREQUENCY;
 
 	dbs_data->tuners = tuners;
-	dbs_data->min_sampling_rate = MIN_SAMPLING_RATE_RATIO *
-		jiffies_to_usecs(10);
+	dbs_data->min_sampling_rate = MINIMUM_SAMPLING_RATE;
 	mutex_init(&dbs_data->mutex);
 	return 0;
 }
