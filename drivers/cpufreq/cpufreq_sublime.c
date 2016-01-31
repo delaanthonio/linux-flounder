@@ -24,6 +24,7 @@
 #include <linux/slab.h>
 #include <linux/sysfs.h>
 #include <linux/types.h>
+#include <linux/touchboost.h>
 
 #include "cpufreq_governor.h"
 
@@ -36,6 +37,8 @@
 #define DEF_FREQUENCY_DOWN_STEP              (45)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define MINIMUM_TOUCH_FREQUENCY              (1428000)
+#define LOW_SPEED_FREQUENCY                  (918000)
+#define TOUCH_BOOST_DURATION                 (50000)
 #define BASE_FREQUENCY_UP_DELTA              (10000)
 #define BASE_FREQUENCY_DOWN_DELTA            (15000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
@@ -99,6 +102,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int freq_target;
         unsigned int freq_upper_bound;
         unsigned int freq_lower_bound;
+        u64 cur_time = ktime_to_us(ktime_get());
+        bool need_boost = cur_time < (get_input_time() + TOUCH_BOOST_DURATION);
 
 
 	/* Check for high-speed frequency increase */
@@ -110,10 +115,14 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
             freq_upper_bound = policy->max;
             dbs_info->requested_freq += get_freq_boost(sb_tuners, policy,
-                                                       freq_upper_bound, load);
-	        // Make sure the requested frequency is at most the maximum frequency
-            dbs_info->requested_freq = MIN(dbs_info->requested_freq, policy->max);
+                                                       freq_upper_bound,
+                                                       load);
 
+            if (need_boost && dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
+                dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+
+            // Make sure the requested frequency is at most the maximum frequency
+            dbs_info->requested_freq = MIN(dbs_info->requested_freq, freq_upper_bound);
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
 	        CPUFREQ_RELATION_H);
