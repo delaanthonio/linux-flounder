@@ -44,8 +44,6 @@
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
 #define FREQUENCY_DELTA_RESISTANCE           (100)
 #define MINIMUM_SAMPLING_RATE                (15000)
-#define MAX(x,y)                             (x > y ? x : y)
-#define MIN(x,y)                             (x < y ? x : y)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
@@ -123,7 +121,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
                 dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
 
             // Make sure the requested frequency is at most the maximum frequency
-            dbs_info->requested_freq = MIN(dbs_info->requested_freq, freq_upper_bound);
+            if (dbs_info->requested_freq > policy->max)
+                    dbs_info->requested_freq = policy->max;
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
 	        CPUFREQ_RELATION_H);
@@ -142,8 +141,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
                                                        freq_upper_bound, load);
 
             // Ensure the requested frequency is at most the high-speed frequency
-	    dbs_info->requested_freq = MIN(dbs_info->requested_freq,
-                                           freq_upper_bound);
+            if (dbs_info->requested_freq > sb_tuners->highspeed_freq)
+                    dbs_info->requested_freq = sb_tuners->highspeed_freq;
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
 	        CPUFREQ_RELATION_H);
@@ -163,7 +162,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
                                                  freq_lower_bound);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
-			dbs_info->requested_freq = MAX(dbs_info->requested_freq,
+			dbs_info->requested_freq = max(dbs_info->requested_freq,
                                                        freq_lower_bound);
 		} else
 			dbs_info->requested_freq = policy->min;
@@ -185,8 +184,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
                                                       freq_lower_bound);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
-			dbs_info->requested_freq = MAX(dbs_info->requested_freq,
-                                                       freq_lower_bound);
+                        if (dbs_info->requested_freq < policy->min)
+                                dbs_info->requested_freq = policy->min;
 		} else
 			dbs_info->requested_freq = policy->min;
 
