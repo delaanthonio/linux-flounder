@@ -112,13 +112,17 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == policy->max)
                     return;
 
+            if (dbs_info->input_event_boost &&
+                dbs_info->requested_freq < sb_tuners->highspeed_freq)
+                dbs_info->requested_freq = sb_tuners->highspeed_freq;
+
+            else {
             freq_upper_bound = policy->max;
             dbs_info->requested_freq += get_freq_boost(sb_tuners, policy,
                                                        freq_upper_bound,
                                                        load);
+            }
 
-            if (need_boost && dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
-                dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
 
             // Make sure the requested frequency is at most the maximum frequency
             if (dbs_info->requested_freq > policy->max)
@@ -136,9 +140,15 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
 	        return;
 
+            if (dbs_info->input_event_boost &&
+                dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
+                dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+
+            else {
             freq_upper_bound = sb_tuners->highspeed_freq;
 	    dbs_info->requested_freq += get_freq_boost(sb_tuners, policy,
                                                        freq_upper_bound, load);
+            }
 
             // Ensure the requested frequency is at most the high-speed frequency
             if (dbs_info->requested_freq > sb_tuners->highspeed_freq)
