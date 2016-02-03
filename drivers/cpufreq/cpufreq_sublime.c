@@ -55,7 +55,7 @@ static inline unsigned int get_freq_boost(struct sb_dbs_tuners *sb_tuners,
 {
         unsigned int freq_boost;
         unsigned int freq_delta;
-        unsigned int freq_multiplier = sb_tuners->freq_up_step + (load / 5);
+        unsigned int freq_multiplier = sb_tuners->freq_up_step + (load / 4);
 
         if (policy->cur < max_freq) {
                 freq_delta = max_freq - policy->cur;
