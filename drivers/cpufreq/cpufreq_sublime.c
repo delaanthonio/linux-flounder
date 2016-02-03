@@ -104,7 +104,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
         unsigned int freq_upper_bound;
         unsigned int freq_lower_bound;
         u64 cur_time = ktime_to_us(ktime_get());
-        bool need_boost = cur_time < (get_input_time() + TOUCH_BOOST_DURATION);
+        dbs_info->input_event_boost = cur_time < (get_input_time() + TOUCH_BOOST_DURATION);
 
 
 	/* Check for high-speed frequency increase */
