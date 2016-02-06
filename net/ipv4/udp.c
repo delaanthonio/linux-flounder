@@ -2165,7 +2165,7 @@ static void udp4_format_sock(struct sock *sp, struct seq_file *f,
 		0, sock_i_ino(sp),
 		atomic_read(&sp->sk_refcnt), sp,
 		atomic_read(&sp->sk_drops),
-		sk_get_waiting_task_cmdline(sp, cmdline), len);
+                   sk_get_waiting_task_cmdline(sp, (void *)cmdline), len);
 	free_page(cmdline);
 }
 

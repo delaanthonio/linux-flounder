@@ -1396,7 +1396,7 @@ static void udp6_sock_seq_show(struct seq_file *seq, struct sock *sp, int bucket
 		   sock_i_ino(sp),
 		   atomic_read(&sp->sk_refcnt), sp,
 		   atomic_read(&sp->sk_drops),
-		   sk_get_waiting_task_cmdline(sp, cmdline));
+		   sk_get_waiting_task_cmdline(sp, (void *)cmdline));
 	free_page(cmdline);
 }
 

@@ -2711,7 +2711,7 @@ static void get_tcp4_sock(struct sock *sk, struct seq_file *f, int i, int *len)
 		sk->sk_state == TCP_LISTEN ?
 		    (fastopenq ? fastopenq->max_qlen : 0) :
 		    (tcp_in_initial_slowstart(tp) ? -1 : tp->snd_ssthresh),
-		sk_get_waiting_task_cmdline(sk, cmdline),
+                   sk_get_waiting_task_cmdline(sk, (void *)cmdline),
 		len);
 
 	free_page(cmdline);
