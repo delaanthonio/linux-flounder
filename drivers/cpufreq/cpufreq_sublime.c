@@ -39,8 +39,7 @@
 #define MINIMUM_TOUCH_FREQUENCY              (1428000)
 #define LOW_SPEED_FREQUENCY                  (918000)
 #define TOUCH_BOOST_DURATION                 (50000)
-#define BASE_FREQUENCY_UP_DELTA              (5000)
-#define BASE_FREQUENCY_DOWN_DELTA            (7500)
+#define BASE_FREQUENCY_DELTA                 (10000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
 #define FREQUENCY_DELTA_RESISTANCE           (100)
 #define MINIMUM_SAMPLING_RATE                (15000)
@@ -59,7 +58,7 @@ static inline unsigned int get_freq_boost(struct sb_dbs_tuners *sb_tuners,
 
         if (policy->cur < max_freq) {
                 freq_delta = max_freq - policy->cur;
-                freq_boost = (BASE_FREQUENCY_UP_DELTA + freq_delta)
+                freq_boost = (BASE_FREQUENCY_DELTA + freq_delta)
                     * freq_multiplier / FREQUENCY_DELTA_RESISTANCE;
         }
 
@@ -76,8 +75,9 @@ static inline unsigned int get_freq_reduction(struct sb_dbs_tuners *sb_tuners,
 
         if (policy->cur > min_freq) {
                 freq_delta =  policy->cur - min_freq;
-                freq_reduction = (BASE_FREQUENCY_DOWN_DELTA + freq_delta)
-                    * freq_multiplier / FREQUENCY_DELTA_RESISTANCE;
+                freq_reduction = BASE_FREQUENCY_DELTA + freq_delta
+                    * (sb_tuners->freq_down_step + load_multiplier)
+                    / FREQUENCY_DELTA_RESISTANCE;
         }
 
         return freq_reduction;
