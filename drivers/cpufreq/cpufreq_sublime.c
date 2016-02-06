@@ -33,8 +33,8 @@
 #define DEF_FREQUENCY_UP_THRESHOLD           (80)
 #define DEF_FREQUENCY_DOWN_THRESHOLD         (20)
 #define DEF_MICRO_FREQUENCY_DOWN_THRESHOLD   (30)
-#define DEF_FREQUENCY_UP_STEP                (20)
-#define DEF_FREQUENCY_DOWN_STEP              (40)
+#define DEF_FREQUENCY_UP_STEP                (10)
+#define DEF_FREQUENCY_DOWN_STEP              (20)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define MINIMUM_TOUCH_FREQUENCY              (1428000)
 #define LOW_SPEED_FREQUENCY                  (918000)
@@ -52,9 +52,9 @@ static inline unsigned int get_freq_boost(struct sb_dbs_tuners *sb_tuners,
                                           unsigned int max_freq,
                                           unsigned int load)
 {
-        unsigned int freq_boost;
+        unsigned int freq_boost = 0;
         unsigned int freq_delta;
-        unsigned int freq_multiplier = sb_tuners->freq_up_step + (load / 4);
+        unsigned int freq_multiplier = sb_tuners->freq_up_step + (load / 2);
 
         if (policy->cur < max_freq) {
                 freq_delta = max_freq - policy->cur;
@@ -67,11 +67,12 @@ static inline unsigned int get_freq_boost(struct sb_dbs_tuners *sb_tuners,
 
 static inline unsigned int get_freq_reduction(struct sb_dbs_tuners *sb_tuners,
                                              struct cpufreq_policy *policy,
-                                             unsigned int min_freq)
+                                              unsigned int min_freq,
+                                              unsigned int load)
 {
         unsigned int freq_reduction = 0;
         unsigned int freq_delta;
-        unsigned int freq_multiplier = sb_tuners->freq_down_step;
+        unsigned int load_multiplier = (100 - load) / 2;
 
         if (policy->cur > min_freq) {
                 freq_delta =  policy->cur - min_freq;
@@ -169,7 +170,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
                 freq_lower_bound = policy->min;
 		freq_target = get_freq_reduction(sb_tuners, policy,
-                                                 freq_lower_bound);
+                                                 freq_lower_bound, load);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
 			dbs_info->requested_freq = max(dbs_info->requested_freq,
@@ -191,7 +192,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
                 freq_lower_bound = LOW_SPEED_FREQUENCY;
 		freq_target = get_freq_reduction(sb_tuners, policy,
-                                                      freq_lower_bound);
+                                                 freq_lower_bound, load);
 		if (dbs_info->requested_freq > freq_target) {
 			dbs_info->requested_freq -= freq_target;
                         if (dbs_info->requested_freq < policy->min)
