@@ -1372,7 +1372,7 @@ static void udp6_sock_seq_show(struct seq_file *seq, struct sock *sp, int bucket
 	const struct in6_addr *dest, *src;
 	__u16 destp, srcp;
 	unsigned long cmdline = __get_free_page(GFP_TEMPORARY);
-	if (cmdline == NULL)
+	if (!cmdline)
 		return;
 
 	dest  = &np->daddr;

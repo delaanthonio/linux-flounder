@@ -2665,7 +2665,7 @@ static void get_tcp4_sock(struct sock *sk, struct seq_file *f, int i, int *len)
 	__u16 srcp = ntohs(inet->inet_sport);
 	int rx_queue;
 	unsigned long cmdline = __get_free_page(GFP_TEMPORARY);
-	if (cmdline == NULL)
+	if (!cmdline)
 		return;
 
 	if (icsk->icsk_pending == ICSK_TIME_RETRANS ||

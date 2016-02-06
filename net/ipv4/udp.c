@@ -2152,7 +2152,7 @@ static void udp4_format_sock(struct sock *sp, struct seq_file *f,
 	__u16 destp	  = ntohs(inet->inet_dport);
 	__u16 srcp	  = ntohs(inet->inet_sport);
 	unsigned long cmdline = __get_free_page(GFP_TEMPORARY);
-	if (cmdline == NULL)
+	if (!cmdline)
 		return;
 
 	seq_printf(f, "%5d: %08X:%04X %08X:%04X"
