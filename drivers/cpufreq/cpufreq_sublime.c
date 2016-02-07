@@ -166,32 +166,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    return;
 	}
 
-
-	/* Check for frequency decrease */
-	if (load < sb_tuners->down_threshold) {
-
-		// break out early if the frequency is set to the minimum
-		if (policy->cur == policy->min)
-			return;
-
-                if (dbs_info->input_event_boost)
-                        freq_lower_bound = MINIMUM_TOUCH_FREQUENCY;
-                else
-                        freq_lower_bound = policy->min;
-
-		freq_target = get_freq_reduction(sb_tuners, policy,
-                                                 freq_lower_bound, load);
-		if (dbs_info->requested_freq > freq_target) {
-			dbs_info->requested_freq -= freq_target;
-                        if (dbs_info->requested_freq < policy->min)
-                                dbs_info->requested_freq = policy->min;
-		} else
-			dbs_info->requested_freq = policy->min;
-
-		__cpufreq_driver_target(policy, dbs_info->requested_freq,
-				CPUFREQ_RELATION_L);
-		return;
-	}
 }
 
 static void sb_dbs_timer(struct work_struct *work)
