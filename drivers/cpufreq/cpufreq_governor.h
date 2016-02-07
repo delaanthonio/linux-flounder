@@ -210,7 +210,6 @@ struct sb_dbs_tuners {
 	unsigned int highspeed_up_threshold;
 	unsigned int up_threshold;
 	unsigned int down_threshold;
-	unsigned int micro_down_threshold;
 	unsigned int freq_up_step;
 	unsigned int freq_down_step;
 	unsigned int highspeed_freq;
