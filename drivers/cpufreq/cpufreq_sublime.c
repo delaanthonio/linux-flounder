@@ -49,7 +49,7 @@ static inline unsigned int get_freq_boost(struct cpufreq_policy *policy,
 {
         unsigned int freq_boost = 0;
 
-        if (policy->cur < max_freq) {
+        if (likely(policy->cur < max_freq)) {
                 freq_boost = (BASE_FREQUENCY_DELTA + max_freq - policy->cur)
                         * load / FREQUENCY_DELTA_RESISTANCE;
         }
@@ -62,7 +62,7 @@ static inline unsigned int get_freq_reduction(struct cpufreq_policy *policy,
 {
         unsigned int freq_reduction = 0;
 
-        if (policy->cur > policy->min) {
+        if (likely(policy->cur > policy->min)) {
                 freq_reduction = (BASE_FREQUENCY_DELTA + policy->cur - policy->min)
                     * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
         }
