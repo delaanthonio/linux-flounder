@@ -972,7 +972,7 @@ static ssize_t ksb_debug_show(struct seq_file *s, void *unused)
 
 static int ksb_debug_open(struct inode *ip, struct file *fp)
 {
-	return single_open(fp, ksb_debug_show, ip->i_private);
+	single_open(fp, ksb_debug_show, ip->i_private);
 
 	return 0;
 }
