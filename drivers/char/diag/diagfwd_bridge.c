@@ -76,7 +76,7 @@ void connect_bridge(int process_cable, uint8_t index)
 			/* If the HSIC (diag_bridge) platform
 			 * device is not open */
 			if (!diag_hsic[index].hsic_device_opened) {
-				hsic_diag_bridge_ops[index].ctxt = (void *)(int)(index);
+                                hsic_diag_bridge_ops[index].ctxt = (void *)(uintptr_t)(index);
 				err = diag_bridge_open(index, &hsic_diag_bridge_ops[index]);
 				if (err) {
 					pr_err("diag: HSIC channel open error: %d\n", err);
@@ -224,11 +224,11 @@ static void diagfwd_bridge_notifier(void *priv, unsigned event, struct diag_requ
 		queue_work(driver->diag_wq, &driver->diag_disconnect_work);
 		break;
 	case USB_DIAG_READ_DONE:
-		index = (int)(d_req->context);
+                index = (int)(uintptr_t)(d_req->context);
 		queue_work(diag_bridge[index].wq, &diag_bridge[index].usb_read_complete_work);
 		break;
 	case USB_DIAG_WRITE_DONE:
-		index = (int)(d_req->context);
+		index = (int)(uintptr_t)(d_req->context);
 		if (index == SMUX && driver->diag_smux_enabled)
 			diagfwd_write_complete_smux();
 		else if (diag_hsic[index].hsic_device_enabled)
@@ -281,7 +281,7 @@ void diagfwd_bridge_init(int index)
 #ifdef CONFIG_DIAG_OVER_USB
 		INIT_WORK(&(diag_bridge[index].diag_read_work), diag_read_usb_hsic_work_fn);
 		if (index == HSIC)
-			diag_bridge[index].ch = usb_diag_open(DIAG_MDM, (void *)index, diagfwd_bridge_notifier);
+                        diag_bridge[index].ch = usb_diag_open(DIAG_MDM, (void *)(uintptr_t)index, diagfwd_bridge_notifier);
 		else if (index == HSIC_2)
 			diag_bridge[index].ch = usb_diag_open(DIAG_MDM2, (void *)index, diagfwd_bridge_notifier);
 		if (IS_ERR(diag_bridge[index].ch)) {
