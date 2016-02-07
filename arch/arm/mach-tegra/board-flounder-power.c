@@ -147,20 +147,6 @@ static struct tegra_cl_dvfs_platform_data e1736_cl_dvfs_data = {
 
 	.cfg_param = &e1736_flounder_cl_dvfs_param,
 };
-static int __init flounder_cl_dvfs_init(void)
-{
-	struct tegra_cl_dvfs_platform_data *data = NULL;
-
-	e1736_fill_reg_map();
-	data = &e1736_cl_dvfs_data;
-
-	if (data) {
-		data->flags = TEGRA_CL_DVFS_DYN_OUTPUT_CFG;
-		tegra_cl_dvfs_device.dev.platform_data = data;
-		platform_device_register(&tegra_cl_dvfs_device);
-	}
-	return 0;
-}
 #else
 static inline int flounder_cl_dvfs_init(void)
 { return 0; }
