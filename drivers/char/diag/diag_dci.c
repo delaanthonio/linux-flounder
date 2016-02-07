@@ -529,7 +529,7 @@ int dci_apps_write(struct diag_dci_client_tbl *entry)
 
 	/* Make sure we have a buffer and there is data in it */
 	if (!entry->dci_apps_data || entry->apps_data_len <= 0) {
-		pr_err("diag: In %s, Invalid dci apps data info, dci_apps_data: 0x%x, apps_data_len: %d\n", __func__, (unsigned int)entry->dci_apps_data, entry->apps_data_len);
+            pr_err("diag: In %s, Invalid dci apps data info, dci_apps_data: 0x%x, apps_data_len: %d\n", __func__, (unsigned int)(uintptr_t)entry->dci_apps_data, entry->apps_data_len);
 		return -EINVAL;
 	}
 
