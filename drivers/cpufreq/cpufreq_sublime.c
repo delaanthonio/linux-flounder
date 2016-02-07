@@ -37,7 +37,7 @@
 #define INPUT_EVENT_DURATION                 (50000)
 #define BASE_FREQUENCY_DELTA                 (10000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
-#define FREQUENCY_DELTA_RESISTANCE           (100)
+#define FREQUENCY_DELTA_RESISTANCE           (200)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
@@ -51,7 +51,7 @@ static inline unsigned int get_freq_boost(struct cpufreq_policy *policy,
 
         if (policy->cur < max_freq) {
                 freq_boost = (BASE_FREQUENCY_DELTA + max_freq - policy->cur)
-                        * (load / 2) / FREQUENCY_DELTA_RESISTANCE;
+                        * load / FREQUENCY_DELTA_RESISTANCE;
         }
 
         return freq_boost;
@@ -64,7 +64,7 @@ static inline unsigned int get_freq_reduction(struct cpufreq_policy *policy,
 
         if (policy->cur > policy->min) {
                 freq_reduction = (BASE_FREQUENCY_DELTA + policy->cur - policy->min)
-                        * (load / 2) / FREQUENCY_DELTA_RESISTANCE;
+                        * load / FREQUENCY_DELTA_RESISTANCE;
         }
 
         return freq_reduction;
