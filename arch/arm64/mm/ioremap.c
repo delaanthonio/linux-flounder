@@ -93,8 +93,8 @@ int pci_ioremap_io(unsigned int offset, phys_addr_t phys_addr)
 {
 	BUG_ON(offset + SZ_64K > IO_SPACE_LIMIT);
 
-	return ioremap_page_range(PCI_IOBASE + offset,
-				  PCI_IOBASE + offset + SZ_64K,
+	return ioremap_page_range((uintptr_t)PCI_IOBASE + offset,
+				  (int)(uintptr_t)PCI_IOBASE + offset + SZ_64K,
 				  phys_addr,
 				  __pgprot(PROT_DEVICE_nGnRE));
 }
