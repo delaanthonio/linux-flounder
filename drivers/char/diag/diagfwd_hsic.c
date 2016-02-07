@@ -275,7 +275,7 @@ int diagfwd_cancel_hsic(int reopen)
 				diag_hsic[i].hsic_device_opened = 0;
 				diag_bridge_close(i);
 				if (reopen) {
-					hsic_diag_bridge_ops[i].ctxt = (void *)(i);
+					hsic_diag_bridge_ops[i].ctxt = (void *)(uintptr_t)(i);
 					err = diag_bridge_open(i, &hsic_diag_bridge_ops[i]);
 					if (err) {
 						pr_err("diag: HSIC %d channel open error: %d\n", i, err);
@@ -349,7 +349,7 @@ void diag_read_usb_hsic_work_fn(struct work_struct *work)
 		diag_hsic[index].in_busy_hsic_read_on_device = 1;
 		diag_bridge[index].usb_read_ptr->buf = diag_bridge[index].usb_buf_out;
 		diag_bridge[index].usb_read_ptr->length = USB_MAX_OUT_BUF;
-		diag_bridge[index].usb_read_ptr->context = (void *)index;
+		diag_bridge[index].usb_read_ptr->context = (void *)(uintptr_t)index;
 		usb_diag_read(diag_bridge[index].ch, diag_bridge[index].usb_read_ptr);
 		APPEND_DEBUG('y');
 	}
@@ -404,7 +404,7 @@ static int diag_hsic_probe(struct platform_device *pdev)
 			pr_warn("diag: HSIC channel already opened in probe\n");
 			diag_bridge_close(pdev->id);
 		}
-		hsic_diag_bridge_ops[pdev->id].ctxt = (void *)(pdev->id);
+		hsic_diag_bridge_ops[pdev->id].ctxt = (void *)(uintptr_t)(pdev->id);
 		err = diag_bridge_open(pdev->id, &hsic_diag_bridge_ops[pdev->id]);
 		if (err) {
 			pr_err("diag: could not open HSIC, err: %d\n", err);
