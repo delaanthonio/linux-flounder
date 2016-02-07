@@ -35,7 +35,7 @@
 #define DEF_FREQUENCY_DOWN_STEP              (20)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define MINIMUM_TOUCH_FREQUENCY              (1428000)
-#define TOUCH_BOOST_DURATION                 (50000)
+#define INPUT_EVENT_DURATION                 (50000)
 #define BASE_FREQUENCY_DELTA                 (10000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
 #define FREQUENCY_DELTA_RESISTANCE           (100)
@@ -90,10 +90,31 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
 	unsigned int freq_target;
-        unsigned int freq_lower_bound;
-        u64 cur_time = ktime_to_us(ktime_get());
-        dbs_info->input_event_boost = cur_time < (get_input_time() + TOUCH_BOOST_DURATION);
 
+	/* Check for frequency decrease */
+	if (load < sb_tuners->down_threshold) {
+
+		// break out early if the frequency is set to the minimum
+		if (policy->cur == policy->min)
+			return;
+
+                if (input_event_boost(INPUT_EVENT_DURATION) &&
+                        dbs_info->requested_freq >= MINIMUM_TOUCH_FREQUENCY)
+                        dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+                else {
+                        freq_target = get_freq_reduction(policy, load);
+                        if (dbs_info->requested_freq > freq_target) {
+                                dbs_info->requested_freq -= freq_target;
+                                if (dbs_info->requested_freq < policy->min)
+                                        dbs_info->requested_freq = policy->min;
+                        } else
+                                dbs_info->requested_freq = policy->min;
+                }
+
+		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+                        CPUFREQ_RELATION_L);
+		return;
+	}
 
 	/* Check for high-speed frequency increase */
 	if (load > sb_tuners->highspeed_up_threshold) {
@@ -102,9 +123,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == policy->max)
                     return;
 
-            if (dbs_info->input_event_boost &&
-                dbs_info->requested_freq < sb_tuners->highspeed_freq)
-                dbs_info->requested_freq = sb_tuners->highspeed_freq;
+            if (input_event_boost(INPUT_EVENT_DURATION))
+                dbs_info->requested_freq = policy->max * load / 100;
 
             else {
             dbs_info->requested_freq += get_freq_boost(policy, policy->max,
@@ -128,9 +148,9 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
 	        return;
 
-            if (dbs_info->input_event_boost &&
+            if (input_event_boost(INPUT_EVENT_DURATION) &&
                 dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
-                dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+                 dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
 
             else {
 	    dbs_info->requested_freq += get_freq_boost(policy,

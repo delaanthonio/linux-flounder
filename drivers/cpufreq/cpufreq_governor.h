@@ -173,7 +173,6 @@ struct cs_cpu_dbs_info_s {
 
 struct sb_cpu_dbs_info_s {
 	struct cpu_dbs_common_info cdbs;
-        bool input_event_boost;
 	unsigned int requested_freq;
 	unsigned int enable:1;
 };
