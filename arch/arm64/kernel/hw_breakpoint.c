@@ -916,10 +916,6 @@ static struct notifier_block hw_breakpoint_cpu_pm_nb = {
 	.notifier_call = hw_breakpoint_cpu_pm_notify,
 };
 
-static void __init hw_breakpoint_pm_init(void)
-{
-	cpu_pm_register_notifier(&hw_breakpoint_cpu_pm_nb);
-}
 #else
 static inline void hw_breakpoint_pm_init(void)
 {
