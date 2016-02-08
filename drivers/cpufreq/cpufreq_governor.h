@@ -133,7 +133,7 @@ static void *get_cpu_dbs_info_s(int cpu)				\
 
 /* Per cpu structures */
 struct cpu_dbs_common_info {
-	int cpu;
+	unsigned int cpu;
 	u64 prev_cpu_idle;
 	u64 prev_cpu_wall;
 	u64 prev_cpu_nice;
@@ -230,7 +230,7 @@ struct common_dbs_data {
 	#define GOV_CONSERVATIVE        1
 	#define GOV_ELEMENTALX          2
 	#define GOV_SUBLIME             3
-	int governor;
+	unsigned int governor;
 	struct attribute_group *attr_group_gov_sys; /* one governor - system */
 	struct attribute_group *attr_group_gov_pol; /* one governor - policy */
 
