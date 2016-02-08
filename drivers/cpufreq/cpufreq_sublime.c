@@ -43,7 +43,7 @@
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
 
-static inline unsigned int get_freq_boost(struct cpufreq_policy *policy,
+static unsigned int get_freq_boost(struct cpufreq_policy *policy,
                                           unsigned int max_freq,
                                           unsigned int load)
 {
@@ -57,7 +57,7 @@ static inline unsigned int get_freq_boost(struct cpufreq_policy *policy,
         return freq_boost;
 }
 
-static inline unsigned int get_freq_reduction(struct cpufreq_policy *policy,
+static unsigned int get_freq_reduction(struct cpufreq_policy *policy,
                                               unsigned int load)
 {
         unsigned int freq_reduction = 0;
