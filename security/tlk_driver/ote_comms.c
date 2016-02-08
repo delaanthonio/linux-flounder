@@ -642,7 +642,7 @@ int te_set_vpr_params(void *vpr_base, size_t vpr_size)
 		int cpu = cpu_logical_map(smp_processor_id());
 
 		work_args.arg0 = TE_SMC_PROGRAM_VPR;
-		work_args.arg1 = (uint32_t)vpr_base;
+		work_args.arg1 = (uint32_t)(uint64_t)vpr_base;
 		work_args.arg2 = vpr_size;
 
 		/* workers don't change CPU. depending on the CPU, execute
