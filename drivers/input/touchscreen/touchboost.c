@@ -47,12 +47,12 @@ static void boost_input_event(struct input_handle *handle,
 	u64 now;
 
 	if ((type == EV_ABS)) {
-		now = ktime_to_us(ktime_get());
+		now = CURRENT_TIME_US;
 
 		if (now - last_input_time < MIN_TIME_INTERVAL_US)
 			return;
 
-		last_input_time = ktime_to_us(ktime_get());
+		last_input_time = now;
 	}
 }
 
