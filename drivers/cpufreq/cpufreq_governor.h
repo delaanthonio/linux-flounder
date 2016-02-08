@@ -204,7 +204,6 @@ struct cs_dbs_tuners {
 };
 
 struct sb_dbs_tuners {
-	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
 	unsigned int highspeed_up_threshold;
 	unsigned int up_threshold;

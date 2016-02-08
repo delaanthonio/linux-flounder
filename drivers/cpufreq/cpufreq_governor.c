@@ -105,7 +105,7 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 		ignore_nice = ex_tuners->ignore_nice_load;
 	} else if (dbs_data->cdata->governor == GOV_SUBLIME) {
 		sampling_rate = sb_tuners->sampling_rate;
-		ignore_nice = sb_tuners->ignore_nice_load;
+		ignore_nice = 0;
 	}  else {
 		sampling_rate = cs_tuners->sampling_rate;
 		ignore_nice = cs_tuners->ignore_nice_load;
@@ -414,7 +414,7 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		sb_tuners = dbs_data->tuners;
 		sb_dbs_info = dbs_data->cdata->get_cpu_dbs_info_s(cpu);
 		sampling_rate = sb_tuners->sampling_rate;
-		ignore_nice = sb_tuners->ignore_nice_load;
+		ignore_nice = 0;
 	} else {
 		od_tuners = dbs_data->tuners;
 		od_dbs_info = dbs_data->cdata->get_cpu_dbs_info_s(cpu);

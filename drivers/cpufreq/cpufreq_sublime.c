@@ -275,38 +275,6 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	return count;
 }
 
-static ssize_t store_ignore_nice_load(struct dbs_data *dbs_data,
-		const char *buf, size_t count)
-{
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-	unsigned int input, j;
-	int ret;
-
-	ret = sscanf(buf, "%u", &input);
-	if (ret != 1)
-		return -EINVAL;
-
-	if (input > 1)
-		input = 1;
-
-	if (input == sb_tuners->ignore_nice_load) /* nothing to do */
-		return count;
-
-	sb_tuners->ignore_nice_load = input;
-
-	/* we need to re-evaluate prev_cpu_idle */
-	for_each_online_cpu(j) {
-		struct sb_cpu_dbs_info_s *dbs_info;
-		dbs_info = &per_cpu(sb_cpu_dbs_info, j);
-		dbs_info->cdbs.prev_cpu_idle = get_cpu_idle_time(j,
-					&dbs_info->cdbs.prev_cpu_wall, 0);
-		if (sb_tuners->ignore_nice_load)
-			dbs_info->cdbs.prev_cpu_nice =
-				kcpustat_cpu(j).cpustat[CPUTIME_NICE];
-	}
-	return count;
-}
-
 static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
@@ -334,7 +302,6 @@ show_store_one(sb, sampling_rate);
 show_store_one(sb, highspeed_up_threshold);
 show_store_one(sb, up_threshold);
 show_store_one(sb, down_threshold);
-show_store_one(sb, ignore_nice_load);
 show_store_one(sb, highspeed_freq);
 declare_show_sampling_rate_min(sb);
 
@@ -342,7 +309,6 @@ gov_sys_pol_attr_rw(sampling_rate);
 gov_sys_pol_attr_rw(highspeed_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
-gov_sys_pol_attr_rw(ignore_nice_load);
 gov_sys_pol_attr_ro(highspeed_freq);
 gov_sys_pol_attr_ro(sampling_rate_min);
 
@@ -352,7 +318,6 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	&highspeed_up_threshold_gov_sys.attr,
 	&up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr,
-	&ignore_nice_load_gov_sys.attr,
 	&highspeed_freq_gov_sys.attr,
 	NULL
 };
@@ -368,7 +333,6 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&highspeed_up_threshold_gov_pol.attr,
 	&up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr,
-	&ignore_nice_load_gov_pol.attr,
 	&highspeed_freq_gov_pol.attr,
 	NULL
 };
@@ -392,7 +356,6 @@ static int sb_init(struct dbs_data *dbs_data)
         tuners->highspeed_up_threshold = DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD;
 	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
-	tuners->ignore_nice_load = 0;
 	tuners->highspeed_freq = DEF_HIGHSPEED_FREQUENCY;
 
 	dbs_data->tuners = tuners;
