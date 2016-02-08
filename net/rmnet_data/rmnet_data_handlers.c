@@ -102,8 +102,8 @@ void rmnet_print_packet(const struct sk_buff *skb, const char *dev, char dir)
 	if (!printlen)
 		return;
 
-	pr_err("[%s][%c] - PKT skb->len=%d skb->head=%p skb->data=%p skb->tail=%p skb->end=%p\n",
-		dev, dir, skb->len, skb->head, skb->data, skb->tail, skb->end);
+	pr_err("[%s][%c] - PKT skb->len=%d skb->head=%p skb->data=%p skb->tail=%p (void *)skb->end=%p\n",
+               dev, dir, skb->len, skb->head, skb->data, skb->tail, (void *)skb->end);
 
 	if (skb->len > 0)
 		len = skb->len;
