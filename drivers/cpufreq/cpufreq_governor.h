@@ -184,7 +184,7 @@ struct ex_cpu_dbs_info_s {
 	unsigned int enable:1;
 };
 
-/* Per policy Governers sysfs tunables */
+/* Per policy Governors sysfs tunables */
 struct od_dbs_tuners {
 	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
