@@ -33,7 +33,7 @@
 #define DEF_FREQUENCY_UP_THRESHOLD           (70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD         (30)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
-#define MINIMUM_TOUCH_FREQUENCY              (1428000)
+#define MIN_INPUT_EVENT_FREQUENCY            (1428000)
 #define INPUT_EVENT_DURATION                 (50000)
 #define BASE_FREQUENCY_DELTA                 (10000)
 #define MAX_BASE_FREQUENCY_DELTA             (50000)
@@ -98,8 +98,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 			return;
 
                 if (input_event_boost(INPUT_EVENT_DURATION) &&
-                        dbs_info->requested_freq >= MINIMUM_TOUCH_FREQUENCY)
-                        dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+                        dbs_info->requested_freq >= MIN_INPUT_EVENT_FREQUENCY)
+                        dbs_info->requested_freq = MIN_INPUT_EVENT_FREQUENCY;
                 else {
                         freq_target = get_freq_reduction(policy, load);
                         if (dbs_info->requested_freq > freq_target) {
@@ -151,8 +151,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	        return;
 
             if (input_event_boost(INPUT_EVENT_DURATION) &&
-                dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
-                    dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+                dbs_info->requested_freq < MIN_INPUT_EVENT_FREQUENCY)
+                    dbs_info->requested_freq = MIN_INPUT_EVENT_FREQUENCY;
 
             else {
                     dbs_info->requested_freq +=
