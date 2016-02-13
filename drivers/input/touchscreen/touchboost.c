@@ -41,19 +41,28 @@ inline u64 get_input_time(void)
 	return last_input_time;
 }
 
-static void boost_input_event(struct input_handle *handle,
-                unsigned int type, unsigned int code, int value)
+static inline u64 current_time_us(void)
 {
-	u64 now;
+	return ktime_to_us(ktime_get());
+}
 
+static void boost_input_event(struct input_handle *handle,
+		unsigned int type, unsigned int code, int value)
+{
 	if ((type == EV_ABS)) {
-		now = CURRENT_TIME_US;
+		u64 now = current_time_us();
 
 		if (now - last_input_time < MIN_TIME_INTERVAL_US)
 			return;
 
 		last_input_time = now;
 	}
+}
+
+/* Return whether a CPU should be boosted due to touch input */
+inline bool input_event_boost(u64 input_event_duration)
+{
+        return current_time_us() < (last_input_time + input_event_duration);
 }
 
 static int boost_input_connect(struct input_handler *handler,
