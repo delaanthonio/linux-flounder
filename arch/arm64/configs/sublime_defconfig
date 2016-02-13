@@ -1,5 +1,4 @@
 #
-# Automatically generated file; DO NOT EDIT.
 # Linux/arm64 3.10.40 Kernel Configuration
 #
 CONFIG_ARM64=y
