@@ -46,6 +46,11 @@ modules.builtin
 /Module.symvers
 
 #
+# Android build files
+#
+/build/
+
+#
 # Debian directory (make deb-pkg)
 #
 /debian/
