@@ -42,7 +42,10 @@
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
-
+/* Return a value to add to the current CPU frequency. The value returned is
+ * directly proportional to the difference between the current frequency and a
+ * maximum frequency, and also in direct proportion to the load.
+ */
 static unsigned int get_freq_boost(struct cpufreq_policy *policy,
                                           unsigned int max_freq,
                                           unsigned int load)
@@ -57,6 +60,10 @@ static unsigned int get_freq_boost(struct cpufreq_policy *policy,
         return freq_boost;
 }
 
+/* Return a value to subtract from the current CPU frequency. The value returned
+ * is directly proportional to the difference between the current frequency and
+ * a minimum frequency, and also in direct proportion to the load.
+ */
 static unsigned int get_freq_reduction(struct cpufreq_policy *policy,
                                               unsigned int load)
 {
@@ -71,13 +78,9 @@ static unsigned int get_freq_reduction(struct cpufreq_policy *policy,
 }
 
 /*
- * Every sampling_rate, we check, if current idle time is less than 20%
- * (default), then we try to increase frequency. Every sampling_rate *
- * sampling_down_factor, we check, if current idle time is more than 80%
- * (default), then we try to decrease frequency
- *
- * Any frequency increase takes it to the maximum frequency. Frequency reduction
- * happens at minimum steps of 5% (default) of maximum frequency
+ * Every sampling_rate, if current idle time is less than 30% (default),
+ * try to increase the frequency. Every sampling_rate if the current idle
+ * time is more than 70% (default), try to decrease the frequency.
  */
 static void sb_check_cpu(int cpu, unsigned int load)
 {
@@ -119,6 +122,9 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == policy->max)
                     return;
 
+            /* Set the requested frequency in direct proportion to the load on
+             * an input event
+             */
             if (input_event_boost(INPUT_EVENT_DURATION))
                 dbs_info->requested_freq = policy->max * load / 100;
 
