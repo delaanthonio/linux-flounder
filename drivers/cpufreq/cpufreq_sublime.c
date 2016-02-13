@@ -71,7 +71,7 @@ static unsigned int get_freq_reduction(struct cpufreq_policy *policy,
 
         if (likely(policy->cur > policy->min)) {
                 freq_reduction = (BASE_FREQUENCY_DELTA + policy->cur - policy->min)
-                    * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
+                        * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
         }
 
         return freq_reduction;
@@ -126,11 +126,11 @@ static void sb_check_cpu(int cpu, unsigned int load)
              * an input event
              */
             if (input_event_boost(INPUT_EVENT_DURATION))
-                dbs_info->requested_freq = policy->max * load / 100;
+                    dbs_info->requested_freq = policy->max * load / 100;
 
             else {
-            dbs_info->requested_freq += get_freq_boost(policy, policy->max,
-                                                       load);
+                    dbs_info->requested_freq +=
+                            get_freq_boost(policy, policy->max, load);
             }
 
 
@@ -139,7 +139,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
                     dbs_info->requested_freq = policy->max;
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
-	        CPUFREQ_RELATION_H);
+                                    CPUFREQ_RELATION_H);
 	    return;
 	}
 
@@ -152,11 +152,12 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
             if (input_event_boost(INPUT_EVENT_DURATION) &&
                 dbs_info->requested_freq < MINIMUM_TOUCH_FREQUENCY)
-                 dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
+                    dbs_info->requested_freq = MINIMUM_TOUCH_FREQUENCY;
 
             else {
-	    dbs_info->requested_freq += get_freq_boost(policy,
-                                                       sb_tuners->highspeed_freq, load);
+                    dbs_info->requested_freq +=
+                            get_freq_boost(policy, sb_tuners->highspeed_freq,
+                                           load);
             }
 
             // Ensure the requested frequency is at most the high-speed frequency
@@ -164,7 +165,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
                     dbs_info->requested_freq = sb_tuners->highspeed_freq;
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
-	        CPUFREQ_RELATION_H);
+                                    CPUFREQ_RELATION_H);
 	    return;
 	}
 
