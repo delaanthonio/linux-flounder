@@ -46,35 +46,22 @@ static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
  * directly proportional to the difference between the current frequency and a
  * maximum frequency, and also in direct proportion to the load.
  */
-static unsigned int freq_boost(struct cpufreq_policy *policy,
-                                          unsigned int max_freq,
-                                          unsigned int load)
+static inline unsigned int freq_boost(unsigned int freq_target_delta,
+                                      unsigned int load)
 {
-        unsigned int freq_boost = 0;
-
-        if (likely(policy->cur < max_freq)) {
-                freq_boost = (BASE_FREQUENCY_DELTA + max_freq - policy->cur)
-                        * load / FREQUENCY_DELTA_RESISTANCE;
-        }
-
-        return freq_boost;
+        return (BASE_FREQUENCY_DELTA + freq_target_delta)
+            * load / FREQUENCY_DELTA_RESISTANCE;
 }
 
 /* Return a value to subtract from the current CPU frequency. The value returned
  * is directly proportional to the difference between the current frequency and
  * a minimum frequency, and also in direct proportion to the load.
  */
-static unsigned int freq_reduction(struct cpufreq_policy *policy,
-                                              unsigned int load)
+static inline unsigned int freq_reduction(unsigned int freq_target_delta,
+                                          unsigned int load)
 {
-        unsigned int freq_reduction = 0;
-
-        if (likely(policy->cur > policy->min)) {
-                freq_reduction = (BASE_FREQUENCY_DELTA + policy->cur - policy->min)
-                        * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
-        }
-
-        return freq_reduction;
+        return  (BASE_FREQUENCY_DELTA + freq_target_delta)
+                * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
 }
 
 /*
@@ -89,6 +76,24 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
 	unsigned int freq_target;
+        unsigned int freq_target_delta;
+
+        /* Check for input event */
+        if (input_event_boost(INPUT_EVENT_DURATION)){
+            /* Ensure that the frequency is at least the minimum input event
+             * frequency. If the load is high, then scale the frequency directly
+             * proportional to the load to ensure a responsive frequency. */
+                freq_target = ((policy->max - policy->min)
+                               * load / 100) + policy->min;
+                dbs_info->requested_freq = max(freq_target,
+                                               MIN_INPUT_EVENT_FREQUENCY);
+
+                __cpufreq_driver_target(policy, dbs_info->requested_freq,
+                                        dbs_info->requested_freq > policy->cur ?
+                                        CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
+
+                return;
+        }
 
 	/* Check for frequency decrease */
 	if (load < sb_tuners->down_threshold) {
@@ -97,21 +102,18 @@ static void sb_check_cpu(int cpu, unsigned int load)
 		if (policy->cur == policy->min)
 			return;
 
-                if (input_event_boost(INPUT_EVENT_DURATION) &&
-                        dbs_info->requested_freq >= MIN_INPUT_EVENT_FREQUENCY)
-                        dbs_info->requested_freq = MIN_INPUT_EVENT_FREQUENCY;
-                else {
-                        freq_target = freq_reduction(policy, load);
-                        if (dbs_info->requested_freq > freq_target) {
-                                dbs_info->requested_freq -= freq_target;
-                                if (dbs_info->requested_freq < policy->min)
-                                        dbs_info->requested_freq = policy->min;
-                        } else
+                freq_target_delta = policy->cur - policy->min;
+                freq_target = freq_reduction(freq_target_delta, load);
+                if (dbs_info->requested_freq > freq_target) {
+                        dbs_info->requested_freq -= freq_target;
+                        if (dbs_info->requested_freq < policy->min)
                                 dbs_info->requested_freq = policy->min;
                 }
+                else
+                    dbs_info->requested_freq = policy->min;
 
 		__cpufreq_driver_target(policy, dbs_info->requested_freq,
-                        CPUFREQ_RELATION_L);
+                                        CPUFREQ_RELATION_L);
 		return;
 	}
 
@@ -122,17 +124,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == policy->max)
                     return;
 
-            /* Set the requested frequency in direct proportion to the load on
-             * an input event
-             */
-            if (input_event_boost(INPUT_EVENT_DURATION))
-                    dbs_info->requested_freq = policy->max * load / 100;
-
-            else {
-                    dbs_info->requested_freq +=
-                            freq_boost(policy, policy->max, load);
-            }
-
+            freq_target_delta = policy->max - policy->cur;
+            dbs_info->requested_freq += freq_boost(freq_target_delta, load);
 
             // Make sure the requested frequency is at most the maximum frequency
             if (dbs_info->requested_freq > policy->max)
@@ -150,18 +143,18 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
 	        return;
 
-            if (input_event_boost(INPUT_EVENT_DURATION) &&
-                dbs_info->requested_freq < MIN_INPUT_EVENT_FREQUENCY)
-                    dbs_info->requested_freq = MIN_INPUT_EVENT_FREQUENCY;
-
-            else {
-                    dbs_info->requested_freq +=
-                            freq_boost(policy, sb_tuners->highspeed_freq, load);
+            if (policy->cur < sb_tuners->highspeed_freq) {
+                    freq_target_delta = sb_tuners->highspeed_freq - policy->cur;
+                    dbs_info->requested_freq += freq_boost(freq_target_delta,
+                                                           load);
+                    if (dbs_info->requested_freq > sb_tuners->highspeed_freq)
+                            dbs_info->requested_freq = sb_tuners->highspeed_freq;
             }
-
-            // Ensure the requested frequency is at most the high-speed frequency
-            if (dbs_info->requested_freq > sb_tuners->highspeed_freq)
+            else
                     dbs_info->requested_freq = sb_tuners->highspeed_freq;
+
+            if (dbs_info->requested_freq > policy->max)                    dbs_info->requested_freq = policy->max;
+
 
 	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
                                     CPUFREQ_RELATION_H);
