@@ -46,7 +46,7 @@ static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
  * directly proportional to the difference between the current frequency and a
  * maximum frequency, and also in direct proportion to the load.
  */
-static unsigned int get_freq_boost(struct cpufreq_policy *policy,
+static unsigned int freq_boost(struct cpufreq_policy *policy,
                                           unsigned int max_freq,
                                           unsigned int load)
 {
@@ -64,7 +64,7 @@ static unsigned int get_freq_boost(struct cpufreq_policy *policy,
  * is directly proportional to the difference between the current frequency and
  * a minimum frequency, and also in direct proportion to the load.
  */
-static unsigned int get_freq_reduction(struct cpufreq_policy *policy,
+static unsigned int freq_reduction(struct cpufreq_policy *policy,
                                               unsigned int load)
 {
         unsigned int freq_reduction = 0;
@@ -101,7 +101,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
                         dbs_info->requested_freq >= MIN_INPUT_EVENT_FREQUENCY)
                         dbs_info->requested_freq = MIN_INPUT_EVENT_FREQUENCY;
                 else {
-                        freq_target = get_freq_reduction(policy, load);
+                        freq_target = freq_reduction(policy, load);
                         if (dbs_info->requested_freq > freq_target) {
                                 dbs_info->requested_freq -= freq_target;
                                 if (dbs_info->requested_freq < policy->min)
@@ -130,7 +130,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
             else {
                     dbs_info->requested_freq +=
-                            get_freq_boost(policy, policy->max, load);
+                            freq_boost(policy, policy->max, load);
             }
 
 
@@ -156,8 +156,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
             else {
                     dbs_info->requested_freq +=
-                            get_freq_boost(policy, sb_tuners->highspeed_freq,
-                                           load);
+                            freq_boost(policy, sb_tuners->highspeed_freq, load);
             }
 
             // Ensure the requested frequency is at most the high-speed frequency
