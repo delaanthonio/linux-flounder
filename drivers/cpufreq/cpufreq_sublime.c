@@ -35,8 +35,7 @@
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define MIN_INPUT_EVENT_FREQUENCY            (1428000)
 #define INPUT_EVENT_DURATION                 (50000)
-#define BASE_FREQUENCY_DELTA                 (10000)
-#define MAX_BASE_FREQUENCY_DELTA             (50000)
+#define MIN_FREQUENCY_DELTA                  (10000)
 #define FREQUENCY_DELTA_RESISTANCE           (200)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
@@ -49,8 +48,9 @@ static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 static inline unsigned int freq_boost(unsigned int freq_target_delta,
                                       unsigned int load)
 {
-        return (BASE_FREQUENCY_DELTA + freq_target_delta)
-            * load / FREQUENCY_DELTA_RESISTANCE;
+        unsigned int freq_boost = freq_target_delta * load
+                / FREQUENCY_DELTA_RESISTANCE;
+        return max(MIN_FREQUENCY_DELTA, freq_boost);
 }
 
 /* Return a value to subtract from the current CPU frequency. The value returned
@@ -60,8 +60,9 @@ static inline unsigned int freq_boost(unsigned int freq_target_delta,
 static inline unsigned int freq_reduction(unsigned int freq_target_delta,
                                           unsigned int load)
 {
-        return  (BASE_FREQUENCY_DELTA + freq_target_delta)
-                * (110 - load) / FREQUENCY_DELTA_RESISTANCE;
+        unsigned int freq_reduction = freq_target_delta * (110 - load)
+                / FREQUENCY_DELTA_RESISTANCE;
+        return max (MIN_FREQUENCY_DELTA, freq_reduction);
 }
 
 /*
