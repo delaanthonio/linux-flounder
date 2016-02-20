@@ -262,7 +262,7 @@ static struct tegra_io_dpd csie_io = {
 static struct regulator *imx219_ext_reg1;
 static struct regulator *imx219_ext_reg2;
 
-static int ardbeg_imx219_get_extra_regulators()
+static int ardbeg_imx219_get_extra_regulators(void)
 {
 	imx219_ext_reg1 = regulator_get(NULL, "imx135_reg1");
 	if (WARN_ON(IS_ERR(imx219_ext_reg1))) {
