@@ -80,6 +80,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int freq_target_delta;
 	unsigned int freq_increase;
 	unsigned int freq_decrease;
+	unsigned int freq_max;
 
         /* Check for input event */
         if (input_event_boost(sb_tuners->input_event_duration)){
@@ -113,37 +114,24 @@ static void sb_check_cpu(int cpu, unsigned int load)
 		return;
 	}
 
-	/* Check for high-speed frequency increase */
-	if (load > sb_tuners->highspeed_up_threshold) {
-
-	    // Stop if the current speed is already the maximum
-	    if (policy->cur == policy->max)
-                    return;
-
-            freq_target_delta = policy->max - policy->cur;
-            freq_increase = prop_freq_delta(freq_target_delta, load);
-            freq_target = min(policy->cur + freq_increase, policy->max);
-
-	    __cpufreq_driver_target(policy, freq_target,
-                                    CPUFREQ_RELATION_H);
-	    return;
-	}
-
 	/* Check for frequency increase */
 	 if (load >= sb_tuners->up_threshold) {
 
-	    /* break out early if the high-speed freq is already set */
-	    if (policy->cur >= sb_tuners->highspeed_freq)
-	        return;
+                 if (load >= sb_tuners->highspeed_up_threshold)
+                         freq_max = policy->max;
+                 else
+                         freq_max = sb_tuners->highspeed_freq;
 
-            freq_target_delta = sb_tuners->highspeed_freq - policy->cur;
-            freq_increase = prop_freq_delta(freq_target_delta, load);
+                 if (policy->cur >= freq_max)
+                         return;
 
-            freq_target = min3(policy->cur + freq_increase,
-                               sb_tuners->highspeed_freq, policy->max);
+                 freq_target_delta = freq_max - policy->cur;
+                 freq_increase = prop_freq_delta(freq_target_delta, load);
 
-	    __cpufreq_driver_target(policy, freq_target,
-                                    CPUFREQ_RELATION_H);
+                 freq_target = min(policy->cur + freq_increase, policy->max);
+
+                 __cpufreq_driver_target(policy, freq_target,
+                                         CPUFREQ_RELATION_H);
 	    return;
 	}
 
