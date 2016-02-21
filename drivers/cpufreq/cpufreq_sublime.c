@@ -35,34 +35,33 @@
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define MIN_INPUT_EVENT_FREQUENCY            (1428000)
 #define INPUT_EVENT_DURATION                 (50000)
+#define FREQUENCY_DELTA_RESISTANCE           (256)
 #define MIN_FREQUENCY_DELTA                  (10000)
-#define FREQUENCY_DELTA_RESISTANCE           (200)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
 static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
 
-/* Return a value to add to the current CPU frequency. The value returned is
- * directly proportional to the difference between the current frequency and a
- * maximum frequency, and also in direct proportion to the load.
+/* Return a value to add to or subtract from the current CPU frequency.
+ * The freq_target_delta, should be the absolute value of the distance between
+ * the current frequency and the maximum frequency for increases or the
+ * minimum frequency for decreases. The load multiplier should be proportional
+ * the load for frequency increases and inversely proportional to the load for
+ * frequency decreases.
  */
-static inline unsigned int freq_boost(unsigned int freq_target_delta,
-                                      unsigned int load)
+static inline unsigned int prop_freq_delta(unsigned int freq_target_delta,
+					   unsigned int load_multiplier)
 {
-        unsigned int freq_boost = freq_target_delta * load
-                / FREQUENCY_DELTA_RESISTANCE;
-        return max(MIN_FREQUENCY_DELTA, freq_boost);
-}
 
-/* Return a value to subtract from the current CPU frequency. The value returned
- * is directly proportional to the difference between the current frequency and
- * a minimum frequency, and also in direct proportion to the load.
- */
-static inline unsigned int freq_reduction(unsigned int freq_target_delta,
-                                          unsigned int load)
-{
-        unsigned int freq_reduction = freq_target_delta * (110 - load)
-                / FREQUENCY_DELTA_RESISTANCE;
-        return max (MIN_FREQUENCY_DELTA, freq_reduction);
+	unsigned int freq_delta = freq_target_delta;
+	unsigned int freq_delta_min = MIN_FREQUENCY_DELTA;
+
+	if (freq_delta > freq_delta_min) {
+		freq_delta *= load_multiplier;
+		freq_delta /= FREQUENCY_DELTA_RESISTANCE;
+		freq_delta = max(freq_delta, freq_delta_min);
+	}
+
+	return freq_delta;
 }
 
 /*
@@ -78,7 +77,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
 	unsigned int freq_target = 0;
 	unsigned int freq_target_delta;
-	unsigned int freq_reduction;
+	unsigned int freq_increase;
+	unsigned int freq_decrease;
 
 	/* Check for input event */
 	if (input_event_boost(INPUT_EVENT_DURATION)){
@@ -105,11 +105,9 @@ static void sb_check_cpu(int cpu, unsigned int load)
 			return;
 
                 freq_target_delta = policy->cur - policy->min;
-                freq_reduction = freq_reduction(freq_target_delta, load);
-                if (policy->cur > freq_reduction)
-                        freq_target = policy->cur - freq_reduction;
-
-		__cpufreq_driver_target(policy, max(freq_target, policy->min),
+                freq_decrease = prop_freq_delta(freq_target_delta, 111 - load);
+                freq_target = max(policy->cur - freq_decrease, policy->min);
+		__cpufreq_driver_target(policy, freq_target,
                                         CPUFREQ_RELATION_L);
 		return;
 	}
@@ -122,13 +120,10 @@ static void sb_check_cpu(int cpu, unsigned int load)
                     return;
 
             freq_target_delta = policy->max - policy->cur;
-            freq_target = policy->cur + freq_boost(freq_target_delta, load);
+            freq_increase = prop_freq_delta(freq_target_delta, load);
+            freq_target = min(policy->cur + freq_increase, policy->max);
 
-            /* Ensure the target frequency is at most the maximum frequency */
-            if (freq_target > policy->max)
-                    freq_target = policy->max;
-
-	    __cpufreq_driver_target(policy, freq_target),
+	    __cpufreq_driver_target(policy, freq_target,
                                     CPUFREQ_RELATION_H);
 	    return;
 	}
@@ -137,21 +132,14 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	 if (load >= sb_tuners->up_threshold) {
 
 	    /* break out early if the high-speed freq is already set */
-	    if (policy->cur == sb_tuners->highspeed_freq)
+	    if (policy->cur >= sb_tuners->highspeed_freq)
 	        return;
 
-            if (policy->cur < sb_tuners->highspeed_freq) {
-                    freq_target_delta = sb_tuners->highspeed_freq - policy->cur;
-                    freq_target = policy->cur + freq_boost(freq_target_delta,
-                                                           load);
-                    if (freq_target > sb_tuners->highspeed_freq)
-                            freq_target = sb_tuners->highspeed_freq;
-            }
-            else
-                    freq_target = sb_tuners->highspeed_freq;
+            freq_target_delta = sb_tuners->highspeed_freq - policy->cur;
+            freq_increase = prop_freq_delta(freq_target_delta, load);
 
-            if (freq_target > policy->max)
-                    freq_target = policy->max;
+            freq_target = min3(policy->cur + freq_increase,
+                               sb_tuners->highspeed_freq, policy->max);
 
 	    __cpufreq_driver_target(policy, freq_target,
                                     CPUFREQ_RELATION_H);
