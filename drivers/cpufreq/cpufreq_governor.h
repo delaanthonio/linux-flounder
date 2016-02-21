@@ -208,6 +208,8 @@ struct sb_dbs_tuners {
 	unsigned int up_threshold;
 	unsigned int down_threshold;
 	unsigned int highspeed_freq;
+	unsigned int input_event_min_freq;
+	unsigned int input_event_duration;
 };
 
 struct ex_dbs_tuners {

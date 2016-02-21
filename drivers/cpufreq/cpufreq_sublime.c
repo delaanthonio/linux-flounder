@@ -33,8 +33,9 @@
 #define DEF_FREQUENCY_UP_THRESHOLD           (70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD         (30)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
-#define MIN_INPUT_EVENT_FREQUENCY            (1428000)
-#define INPUT_EVENT_DURATION                 (50000)
+#define DEF_INPUT_EVENT_MIN_FREQUENCY        (1428000)
+#define DEF_INPUT_EVENT_DURATION             (50000)
+#define MAX_INPUT_EVENT_DURATION             (200000)
 #define FREQUENCY_DELTA_RESISTANCE           (256)
 #define MIN_FREQUENCY_DELTA                  (10000)
 #define MINIMUM_SAMPLING_RATE                (15000)
@@ -80,15 +81,15 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int freq_increase;
 	unsigned int freq_decrease;
 
-	/* Check for input event */
-	if (input_event_boost(INPUT_EVENT_DURATION)){
-	    /* Ensure that the frequency is at least the minimum input event
+        /* Check for input event */
+        if (input_event_boost(sb_tuners->input_event_duration)){
+            /* Ensure that the frequency is at least the minimum input event
              * frequency. If the load is high, then scale the frequency directly
              * proportional to the load to ensure a responsive frequency. */
                 freq_target = ((policy->max - policy->min)
                                * load / 100) + policy->min;
-                if (freq_target < MIN_INPUT_EVENT_FREQUENCY)
-                    freq_target = MIN_INPUT_EVENT_FREQUENCY;
+                if (freq_target < sb_tuners->input_event_min_freq)
+                        freq_target = sb_tuners->input_event_min_freq;
 
                 __cpufreq_driver_target(policy, freq_target,
                                         freq_target > policy->cur ?
@@ -253,22 +254,70 @@ static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-        struct cpufreq_policy *policy;
+	struct cpufreq_policy *policy;
 
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-        if (ret != 1)
-                return -EINVAL;
+	if (ret != 1)
+		return -EINVAL;
 
-        if (input < policy->min)
-                input = policy->min;
+	if (input < policy->min)
+		input = policy->min;
 
-        else if (input > policy->max)
-                input  = policy->max;
+	else if (input > policy->max)
+		input  = policy->max;
 
-        sb_tuners->highspeed_freq = input;
+	sb_tuners->highspeed_freq = input;
+	return count;
+}
+
+static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
+					  const char *buf, size_t count)
+{
+	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+
+	unsigned int input;
+	unsigned int cpu;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+
+        /* The input should be at most the lowest maximum frequency set among
+         * all CPUs and at least the greatest minimum frequency of all CPUs
+         */
+	for_each_online_cpu(cpu) {
+		struct sb_cpu_dbs_info_s *dbs_info = &per_cpu(sb_cpu_dbs_info,
+							      cpu);
+		struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
+
+		if (input < policy->min)
+			input = policy->min;
+
+		else if (input > policy->max)
+			input  = policy->max;
+        }
+
+        sb_tuners->input_event_min_freq = input;
+	return count;
+}
+
+static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
+					  const char *buf, size_t count)
+{
+	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1 || input > MAX_INPUT_EVENT_DURATION)
+		return -EINVAL;
+
+	sb_tuners->input_event_duration = input;
 	return count;
 }
 
@@ -277,6 +326,8 @@ show_store_one(sb, highspeed_up_threshold);
 show_store_one(sb, up_threshold);
 show_store_one(sb, down_threshold);
 show_store_one(sb, highspeed_freq);
+show_store_one(sb, input_event_min_freq);
+show_store_one(sb, input_event_duration);
 declare_show_sampling_rate_min(sb);
 
 gov_sys_pol_attr_rw(sampling_rate);
@@ -284,6 +335,8 @@ gov_sys_pol_attr_rw(highspeed_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
 gov_sys_pol_attr_ro(highspeed_freq);
+gov_sys_pol_attr_rw(input_event_min_freq);
+gov_sys_pol_attr_rw(input_event_duration);
 gov_sys_pol_attr_ro(sampling_rate_min);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
@@ -293,6 +346,8 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	&up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr,
 	&highspeed_freq_gov_sys.attr,
+	&input_event_min_freq_gov_sys.attr,
+	&input_event_duration_gov_sys.attr,
 	NULL
 };
 
@@ -308,6 +363,8 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	&up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr,
 	&highspeed_freq_gov_pol.attr,
+	&input_event_min_freq_gov_pol.attr,
+	&input_event_duration_gov_pol.attr,
 	NULL
 };
 
@@ -327,10 +384,12 @@ static int sb_init(struct dbs_data *dbs_data)
 		pr_err("%s: kzalloc failed\n", __func__);
 		return -ENOMEM;
 	}
-        tuners->highspeed_up_threshold = DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD;
+	tuners->highspeed_up_threshold = DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD;
 	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
 	tuners->highspeed_freq = DEF_HIGHSPEED_FREQUENCY;
+	tuners->input_event_min_freq = DEF_INPUT_EVENT_MIN_FREQUENCY;
+	tuners->input_event_duration = DEF_INPUT_EVENT_DURATION;
 
 	dbs_data->tuners = tuners;
 	dbs_data->min_sampling_rate = MINIMUM_SAMPLING_RATE;
