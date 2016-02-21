@@ -254,20 +254,29 @@ static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-	struct cpufreq_policy *policy;
 
 	unsigned int input;
+	unsigned int cpu;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input < policy->min)
-		input = policy->min;
+	/* The input should be at most the lowest maximum frequency set among
+         * all CPUs and at least the greatest minimum frequency of all CPUs
+         */
+	for_each_online_cpu(cpu) {
+		struct sb_cpu_dbs_info_s *dbs_info = &per_cpu(sb_cpu_dbs_info,
+                        cpu);
+		struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 
-	else if (input > policy->max)
-		input  = policy->max;
+		if (input < policy->min)
+			input = policy->min;
+
+		else if (input > policy->max)
+			input  = policy->max;
+        }
 
 	sb_tuners->highspeed_freq = input;
 	return count;
@@ -334,7 +343,7 @@ gov_sys_pol_attr_rw(sampling_rate);
 gov_sys_pol_attr_rw(highspeed_up_threshold);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
-gov_sys_pol_attr_ro(highspeed_freq);
+gov_sys_pol_attr_rw(highspeed_freq);
 gov_sys_pol_attr_rw(input_event_min_freq);
 gov_sys_pol_attr_rw(input_event_duration);
 gov_sys_pol_attr_ro(sampling_rate_min);
