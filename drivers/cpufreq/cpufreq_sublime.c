@@ -212,7 +212,7 @@ static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const cha
     ret = sscanf(buf, "%u", &input);
 
     if (ret != 1 || input > 100 || input <= sb_tuners->up_threshold)
-	return -EINVAL;
+            return -EINVAL;
 
     sb_tuners->highspeed_up_threshold = input;
     return count;
