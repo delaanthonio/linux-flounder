@@ -95,12 +95,10 @@ static void sb_check_cpu(int cpu, unsigned int load)
                 __cpufreq_driver_target(policy, freq_target,
                                         freq_target > policy->cur ?
                                         CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
-
-                return;
         }
 
 	/* Check for frequency decrease */
-	if (load < sb_tuners->down_threshold) {
+	else if (load < sb_tuners->down_threshold) {
 
 		// break out early if the frequency is set to the minimum
 		if (policy->cur == policy->min)
@@ -111,11 +109,10 @@ static void sb_check_cpu(int cpu, unsigned int load)
                 freq_target = max(policy->cur - freq_decrease, policy->min);
 		__cpufreq_driver_target(policy, freq_target,
                                         CPUFREQ_RELATION_L);
-		return;
 	}
 
 	/* Check for frequency increase */
-	 if (load >= sb_tuners->up_threshold) {
+	else if (load >= sb_tuners->up_threshold) {
 
                  if (load >= sb_tuners->highspeed_up_threshold)
                          freq_max = policy->max;
@@ -132,7 +129,6 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
                  __cpufreq_driver_target(policy, freq_target,
                                          CPUFREQ_RELATION_H);
-	    return;
 	}
 
 }
