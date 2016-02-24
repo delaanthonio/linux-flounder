@@ -468,7 +468,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			ex_dbs_info->enable = 1;
 		} else if (dbs_data->cdata->governor == GOV_SUBLIME) {
 			sb_dbs_info->enable = 1;
-			sb_dbs_info->requested_freq = policy->cur;
 		} else {
 			od_dbs_info->rate_mult = 1;
 			od_dbs_info->sample_type = OD_NORMAL_SAMPLE;

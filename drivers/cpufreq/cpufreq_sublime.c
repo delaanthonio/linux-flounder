@@ -76,21 +76,22 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-	unsigned int freq_target;
-        unsigned int freq_target_delta;
+	unsigned int freq_target = 0;
+	unsigned int freq_target_delta;
+	unsigned int freq_reduction;
 
-        /* Check for input event */
-        if (input_event_boost(INPUT_EVENT_DURATION)){
-            /* Ensure that the frequency is at least the minimum input event
+	/* Check for input event */
+	if (input_event_boost(INPUT_EVENT_DURATION)){
+	    /* Ensure that the frequency is at least the minimum input event
              * frequency. If the load is high, then scale the frequency directly
              * proportional to the load to ensure a responsive frequency. */
                 freq_target = ((policy->max - policy->min)
                                * load / 100) + policy->min;
-                dbs_info->requested_freq = max(freq_target,
-                                               MIN_INPUT_EVENT_FREQUENCY);
+                if (freq_target < MIN_INPUT_EVENT_FREQUENCY)
+                    freq_target = MIN_INPUT_EVENT_FREQUENCY;
 
-                __cpufreq_driver_target(policy, dbs_info->requested_freq,
-                                        dbs_info->requested_freq > policy->cur ?
+                __cpufreq_driver_target(policy, freq_target,
+                                        freq_target > policy->cur ?
                                         CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
 
                 return;
@@ -104,16 +105,11 @@ static void sb_check_cpu(int cpu, unsigned int load)
 			return;
 
                 freq_target_delta = policy->cur - policy->min;
-                freq_target = freq_reduction(freq_target_delta, load);
-                if (dbs_info->requested_freq > freq_target) {
-                        dbs_info->requested_freq -= freq_target;
-                        if (dbs_info->requested_freq < policy->min)
-                                dbs_info->requested_freq = policy->min;
-                }
-                else
-                    dbs_info->requested_freq = policy->min;
+                freq_reduction = freq_reduction(freq_target_delta, load);
+                if (policy->cur > freq_reduction)
+                        freq_target = policy->cur - freq_reduction;
 
-		__cpufreq_driver_target(policy, dbs_info->requested_freq,
+		__cpufreq_driver_target(policy, max(freq_target, policy->min),
                                         CPUFREQ_RELATION_L);
 		return;
 	}
@@ -122,17 +118,17 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	if (load > sb_tuners->highspeed_up_threshold) {
 
 	    // Stop if the current speed is already the maximum
-	    if (dbs_info->requested_freq == policy->max)
+	    if (policy->cur == policy->max)
                     return;
 
             freq_target_delta = policy->max - policy->cur;
-            dbs_info->requested_freq += freq_boost(freq_target_delta, load);
+            freq_target = policy->cur + freq_boost(freq_target_delta, load);
 
-            // Make sure the requested frequency is at most the maximum frequency
-            if (dbs_info->requested_freq > policy->max)
-                    dbs_info->requested_freq = policy->max;
+            /* Ensure the target frequency is at most the maximum frequency */
+            if (freq_target > policy->max)
+                    freq_target = policy->max;
 
-	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
+	    __cpufreq_driver_target(policy, freq_target),
                                     CPUFREQ_RELATION_H);
 	    return;
 	}
@@ -141,23 +137,23 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	 if (load >= sb_tuners->up_threshold) {
 
 	    /* break out early if the high-speed freq is already set */
-	    if (dbs_info->requested_freq == sb_tuners->highspeed_freq)
+	    if (policy->cur == sb_tuners->highspeed_freq)
 	        return;
 
             if (policy->cur < sb_tuners->highspeed_freq) {
                     freq_target_delta = sb_tuners->highspeed_freq - policy->cur;
-                    dbs_info->requested_freq += freq_boost(freq_target_delta,
+                    freq_target = policy->cur + freq_boost(freq_target_delta,
                                                            load);
-                    if (dbs_info->requested_freq > sb_tuners->highspeed_freq)
-                            dbs_info->requested_freq = sb_tuners->highspeed_freq;
+                    if (freq_target > sb_tuners->highspeed_freq)
+                            freq_target = sb_tuners->highspeed_freq;
             }
             else
-                    dbs_info->requested_freq = sb_tuners->highspeed_freq;
+                    freq_target = sb_tuners->highspeed_freq;
 
-            if (dbs_info->requested_freq > policy->max)                    dbs_info->requested_freq = policy->max;
+            if (freq_target > policy->max)
+                    freq_target = policy->max;
 
-
-	    __cpufreq_driver_target(policy, dbs_info->requested_freq,
+	    __cpufreq_driver_target(policy, freq_target,
                                     CPUFREQ_RELATION_H);
 	    return;
 	}
@@ -194,18 +190,8 @@ static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 					&per_cpu(sb_cpu_dbs_info, freq->cpu);
 	struct cpufreq_policy *policy;
 
-	if (!dbs_info->enable)
-		return 0;
-
-	policy = dbs_info->cdbs.cur_policy;
-
-	/*
-	 * we only care if our internally tracked frequency moves outside the 'valid'
-	 * ranges of frequency available to us otherwise we do not change it
-	*/
-	if (dbs_info->requested_freq > policy->max
-			|| dbs_info->requested_freq < policy->min)
-		dbs_info->requested_freq = freq->new;
+	if (dbs_info->enable)
+		policy = dbs_info->cdbs.cur_policy;
 
 	return 0;
 }
@@ -229,7 +215,7 @@ static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 }
 
 static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const char *buf,
-                                  size_t count)
+				  size_t count)
 {
     struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
     unsigned int input;
@@ -237,7 +223,7 @@ static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const cha
     ret = sscanf(buf, "%u", &input);
 
     if (ret != 1 || input > 100 || input <= sb_tuners->up_threshold)
-        return -EINVAL;
+	return -EINVAL;
 
     sb_tuners->highspeed_up_threshold = input;
     return count;
