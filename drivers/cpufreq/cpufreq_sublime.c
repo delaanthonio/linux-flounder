@@ -76,6 +76,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 	struct dbs_data *dbs_data = policy->governor_data;
 	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
 	unsigned int freq_target_delta;
 	unsigned int freq_increase;
@@ -112,7 +113,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	}
 
 	/* Check for frequency increase */
-	else if (load >= sb_tuners->up_threshold) {
+	else if (load >= max(sb_tuners->up_threshold, prev_load)) {
 
                  if (load >= sb_tuners->highspeed_up_threshold)
                          freq_max = policy->max;
