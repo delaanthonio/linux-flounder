@@ -32,6 +32,8 @@
 #define DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD (95)
 #define DEF_FREQUENCY_UP_THRESHOLD           (70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD         (30)
+#define MAXIMUM_LOAD                         (100)
+#define MINIMUM_LOAD                         (11)
 #define DEF_HIGHSPEED_FREQUENCY              (1836000)
 #define DEF_INPUT_EVENT_MIN_FREQUENCY        (1428000)
 #define DEF_INPUT_EVENT_DURATION             (50000)
@@ -196,7 +198,7 @@ static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const cha
     int ret;
     ret = sscanf(buf, "%u", &input);
 
-    if (ret != 1 || input > 100 || input <= sb_tuners->up_threshold)
+    if (ret != 1 || input > MAXIMUM_LOAD || input <= sb_tuners->up_threshold)
 	    return -EINVAL;
 
     sb_tuners->highspeed_up_threshold = input;
@@ -227,9 +229,8 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	/* cannot be lower than 11 otherwise frequency will not fall */
-	if (ret != 1 || input < 11 || input > 100 ||
-			input >= sb_tuners->up_threshold)
+	if (ret != 1 || input < MINIMUM_LOAD ||
+                input >= sb_tuners->up_threshold)
 		return -EINVAL;
 
 	sb_tuners->down_threshold = input;
