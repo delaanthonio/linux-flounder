@@ -87,16 +87,16 @@ static void sb_check_cpu(int cpu, unsigned int load)
         if (input_event_boost(sb_tuners->input_event_duration)){
             /* Ensure that the frequency is at least the minimum input event
              * frequency. If the load is high, then scale the frequency directly
-             * proportional to the load to ensure a responsive frequency. */
-                freq_target = ((policy->max - policy->min)
-                               * load / 100) + policy->min;
-                if (freq_target < sb_tuners->input_event_min_freq)
+	     * proportional to the load to ensure a responsive frequency. */
+		freq_target = ((policy->max - policy->min)
+			       * load / 100) + policy->min;
+		if (freq_target < sb_tuners->input_event_min_freq)
                         freq_target = sb_tuners->input_event_min_freq;
 
-                __cpufreq_driver_target(policy, freq_target,
-                                        freq_target > policy->cur ?
-                                        CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
-        }
+		__cpufreq_driver_target(policy, freq_target,
+					freq_target > policy->cur ?
+					CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
+	}
 
 	/* Check for frequency decrease */
 	else if (load < sb_tuners->down_threshold) {
@@ -105,31 +105,31 @@ static void sb_check_cpu(int cpu, unsigned int load)
 		if (policy->cur == policy->min)
 			return;
 
-                freq_target_delta = policy->cur - policy->min;
-                freq_decrease = prop_freq_delta(freq_target_delta, 111 - load);
-                freq_target = max(policy->cur - freq_decrease, policy->min);
+		freq_target_delta = policy->cur - policy->min;
+		freq_decrease = prop_freq_delta(freq_target_delta, 111 - load);
+		freq_target = max(policy->cur - freq_decrease, policy->min);
 		__cpufreq_driver_target(policy, freq_target,
-                                        CPUFREQ_RELATION_L);
+					CPUFREQ_RELATION_L);
 	}
 
 	/* Check for frequency increase */
 	else if (load >= max(sb_tuners->up_threshold, prev_load)) {
 
-                 if (load >= sb_tuners->highspeed_up_threshold)
-                         freq_max = policy->max;
-                 else
-                         freq_max = sb_tuners->highspeed_freq;
+		 if (load >= sb_tuners->highspeed_up_threshold)
+			 freq_max = policy->max;
+		 else
+			 freq_max = sb_tuners->highspeed_freq;
 
-                 if (policy->cur >= freq_max)
-                         return;
+		 if (policy->cur >= freq_max)
+			 return;
 
-                 freq_target_delta = freq_max - policy->cur;
-                 freq_increase = prop_freq_delta(freq_target_delta, load);
+		 freq_target_delta = freq_max - policy->cur;
+		 freq_increase = prop_freq_delta(freq_target_delta, load);
 
-                 freq_target = min(policy->cur + freq_increase, policy->max);
+		 freq_target = min(policy->cur + freq_increase, policy->max);
 
-                 __cpufreq_driver_target(policy, freq_target,
-                                         CPUFREQ_RELATION_H);
+		 __cpufreq_driver_target(policy, freq_target,
+					 CPUFREQ_RELATION_H);
 	}
 
 }
@@ -197,7 +197,7 @@ static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const cha
     ret = sscanf(buf, "%u", &input);
 
     if (ret != 1 || input > 100 || input <= sb_tuners->up_threshold)
-            return -EINVAL;
+	    return -EINVAL;
 
     sb_tuners->highspeed_up_threshold = input;
     return count;
