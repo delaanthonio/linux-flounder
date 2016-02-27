@@ -84,6 +84,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int freq_increase;
 	unsigned int freq_decrease;
 	unsigned int freq_max;
+	unsigned int load_multiplier;
 
         /* Check for input event */
         if (input_event_boost(sb_tuners->input_event_duration)){
@@ -108,7 +109,9 @@ static void sb_check_cpu(int cpu, unsigned int load)
 			return;
 
 		freq_target_delta = policy->cur - policy->min;
-		freq_decrease = prop_freq_delta(freq_target_delta, 111 - load);
+		load_multiplier = MAXIMUM_LOAD + MINIMUM_LOAD - load;
+		freq_decrease = prop_freq_delta(freq_target_delta,
+                        load_multiplier);
 		freq_target = max(policy->cur - freq_decrease, policy->min);
 		__cpufreq_driver_target(policy, freq_target,
 					CPUFREQ_RELATION_L);
