@@ -91,8 +91,8 @@ static void sb_check_cpu(int cpu, unsigned int load)
             /* Ensure that the frequency is at least the minimum input event
              * frequency. If the load is high, then scale the frequency directly
 	     * proportional to the load to ensure a responsive frequency. */
-		freq_target = ((policy->max - policy->min)
-			       * load / 100) + policy->min;
+                freq_target_delta = policy->max - policy->min;
+		freq_target = (freq_target_delta * load / 100) + policy->min;
 		if (freq_target < sb_tuners->input_event_min_freq)
                         freq_target = sb_tuners->input_event_min_freq;
 
