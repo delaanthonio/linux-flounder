@@ -24,6 +24,7 @@
 #include <linux/cpumask.h>
 #include <linux/kernel.h>
 #include <linux/of_platform.h>
+#include <linux/tegra-fuse.h>
 
 #include <asm/traps.h>
 
@@ -425,7 +426,6 @@ int denver_get_pmic_config(enum denver_pmic_type *type,
 	return 0;
 }
 
-int fuse_cp_rev_check(void);
 static int __init denver_pmic_init(void)
 {
 	u32 voltage;
@@ -467,7 +467,7 @@ static int __init denver_pmic_init(void)
 	}
 
     if (fuse_cp_rev_check() >= 1)
-        voltage = 16;
+            voltage = 16;
 
 	err = denver_set_pmic_config(type, (u16)voltage, lock);
 

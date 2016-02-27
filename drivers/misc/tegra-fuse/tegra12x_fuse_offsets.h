@@ -15,6 +15,7 @@
  */
 
 #include <linux/tegra-soc.h>
+#include <linux/tegra-fuse.h>
 #include "fuse.h"
 
 #ifndef __TEGRA12x_FUSE_OFFSETS_H
@@ -140,16 +141,14 @@ DEVICE_ATTR(odm_lock, 0440, tegra_fuse_show, tegra_fuse_store);
  */
 inline int fuse_cp_rev_check(void)
 {
-	static enum tegra_chipid chip_id;
+	enum tegra_chipid chip_id = tegra_get_chipid();
+
 	u32 rev, rev_major, rev_minor;
 
 	rev = tegra_fuse_readl(FUSE_CP_REV);
 	rev_minor = rev & 0x1f;
 	rev_major = (rev >> 5) & 0x3f;
 	pr_debug("%s: CP rev %d.%d\n", __func__, rev_major, rev_minor);
-
-	if (!chip_id)
-		chip_id = tegra_get_chipid();
 
 	/* T13x: all CP rev are valid */
 	if (chip_id == TEGRA_CHIPID_TEGRA13) {

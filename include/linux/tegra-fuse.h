@@ -72,6 +72,7 @@ int tegra_get_gpu_iddq_value(void);
 int tegra_gpu_speedo_value(void);
 #endif
 
+int fuse_cp_rev_check(void);
 int tegra_fuse_get_revision(u32 *rev);
 int tegra_fuse_get_tsensor_calibration_data(u32 *calib);
 int tegra_fuse_get_tsensor_spare_bits(u32 *spare_bits);
