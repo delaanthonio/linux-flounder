@@ -84,21 +84,22 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int freq_increase;
 	unsigned int freq_decrease;
 	unsigned int freq_max;
+	unsigned int freq_min;
 	unsigned int load_multiplier;
 
-        /* Check for input event */
-        if (input_event_boost(sb_tuners->input_event_duration)){
-            /* Ensure that the frequency is at least the minimum input event
-             * frequency. If the load is high, then scale the frequency directly
-	     * proportional to the load to ensure a responsive frequency. */
-                freq_target_delta = policy->max - policy->min;
-		freq_target = (freq_target_delta * load / 100) + policy->min;
-		if (freq_target < sb_tuners->input_event_min_freq)
-                        freq_target = sb_tuners->input_event_min_freq;
+	/* Check for input event */
+	if (input_event_boost(sb_tuners->input_event_duration)) {
+		freq_min = sb_tuners->input_event_min_freq;
 
-		__cpufreq_driver_target(policy, freq_target,
-					freq_target > policy->cur ?
-					CPUFREQ_RELATION_H : CPUFREQ_RELATION_L);
+		if (load >= sb_tuners->up_threshold) {
+			freq_target_delta = policy->max - freq_min;
+			freq_target = freq_target_delta * load / MAXIMUM_LOAD;
+			freq_target += freq_min;
+		}
+
+		else freq_target = freq_min;
+
+		__cpufreq_driver_target(policy, freq_target, CPUFREQ_RELATION_H);
 	}
 
 	/* Check for frequency decrease */
