@@ -452,10 +452,10 @@ static void __exit cpufreq_gov_dbs_exit(void)
 }
 
 MODULE_AUTHOR("Dela Anthonio");
-MODULE_DESCRIPTION("'cpufreq_sublime' - A dynamic cpufreq governor for "
-		"Low Latency Frequency Transition capable processors "
-		"optimized for devices with the Tegra K1 processor"
-		"and have limited battry life");
+MODULE_DESCRIPTION("'cpufreq_sublime' - A dynamic CPU frequency governor for"
+		"Low latency frequency transition capable processors. "
+		"This governor is optimized for devices which have a"
+                "touchscreen and limited battery capacity");
 MODULE_LICENSE("GPL");
 
 #ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIME
