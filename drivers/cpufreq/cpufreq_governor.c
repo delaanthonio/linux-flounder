@@ -79,6 +79,7 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 	struct od_dbs_tuners *od_tuners = dbs_data->tuners;
 	struct cs_dbs_tuners *cs_tuners = dbs_data->tuners;
 	struct ex_dbs_tuners *ex_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 	struct cpufreq_policy *policy;
 	unsigned int sampling_rate;
 	unsigned int max_load = 0;
@@ -102,7 +103,10 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 	} else if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
 		sampling_rate = ex_tuners->sampling_rate;
 		ignore_nice = ex_tuners->ignore_nice_load;
-	} else {
+	} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
+		sampling_rate = sa_tuners->sampling_rate;
+		ignore_nice = 0;
+	}  else {
 		sampling_rate = cs_tuners->sampling_rate;
 		ignore_nice = cs_tuners->ignore_nice_load;
 	}
@@ -262,6 +266,9 @@ static void set_sampling_rate(struct dbs_data *dbs_data,
 	} else if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
 		struct ex_dbs_tuners *ex_tuners = dbs_data->tuners;
 		ex_tuners->sampling_rate = sampling_rate;
+	} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
+		struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+		sa_tuners->sampling_rate = sampling_rate;
 	} else {
 		struct od_dbs_tuners *od_tuners = dbs_data->tuners;
 		od_tuners->sampling_rate = sampling_rate;
@@ -275,10 +282,12 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	struct od_cpu_dbs_info_s *od_dbs_info = NULL;
 	struct cs_cpu_dbs_info_s *cs_dbs_info = NULL;
 	struct ex_cpu_dbs_info_s *ex_dbs_info = NULL;
+	struct sa_cpu_dbs_info_s *sa_dbs_info = NULL;
 	struct od_ops *od_ops = NULL;
 	struct od_dbs_tuners *od_tuners = NULL;
 	struct cs_dbs_tuners *cs_tuners = NULL;
 	struct ex_dbs_tuners *ex_tuners = NULL;
+	struct sa_dbs_tuners *sa_tuners = NULL;
 	struct cpu_dbs_common_info *cpu_cdbs;
 	unsigned int sampling_rate, latency, ignore_nice, j, cpu = policy->cpu;
 	int io_busy = 0;
@@ -334,6 +343,8 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		/* Bring kernel and HW constraints together */
 		if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
 			set_sampling_rate(dbs_data, dbs_data->min_sampling_rate);
+		} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
+			set_sampling_rate(dbs_data, dbs_data->min_sampling_rate);
 		} else {
 			dbs_data->min_sampling_rate = max(dbs_data->min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
@@ -346,6 +357,12 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			struct cs_ops *cs_ops = dbs_data->cdata->gov_ops;
 
 			cpufreq_register_notifier(cs_ops->notifier_block,
+					CPUFREQ_TRANSITION_NOTIFIER);
+		} else if ((cdata->governor == GOV_SUBLIMEACTIVE) &&
+				(!policy->governor->initialized)) {
+			struct sa_ops *sa_ops = dbs_data->cdata->gov_ops;
+
+			cpufreq_register_notifier(sa_ops->notifier_block,
 					CPUFREQ_TRANSITION_NOTIFIER);
 		}
 
@@ -363,6 +380,12 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				struct cs_ops *cs_ops = dbs_data->cdata->gov_ops;
 
 				cpufreq_unregister_notifier(cs_ops->notifier_block,
+						CPUFREQ_TRANSITION_NOTIFIER);
+			} else if ((dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) &&
+				(policy->governor->initialized == 1)) {
+				struct sa_ops *sa_ops = dbs_data->cdata->gov_ops;
+
+				cpufreq_unregister_notifier(sa_ops->notifier_block,
 						CPUFREQ_TRANSITION_NOTIFIER);
 			}
 
@@ -387,6 +410,11 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		ex_dbs_info = dbs_data->cdata->get_cpu_dbs_info_s(cpu);
 		sampling_rate = ex_tuners->sampling_rate;
 		ignore_nice = ex_tuners->ignore_nice_load;
+	} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
+		sa_tuners = dbs_data->tuners;
+		sa_dbs_info = dbs_data->cdata->get_cpu_dbs_info_s(cpu);
+		sampling_rate = sa_tuners->sampling_rate;
+		ignore_nice = 0;
 	} else {
 		od_tuners = dbs_data->tuners;
 		od_dbs_info = dbs_data->cdata->get_cpu_dbs_info_s(cpu);
@@ -438,6 +466,8 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			cs_dbs_info->requested_freq = policy->cur;
 		} else if (dbs_data->cdata->governor == GOV_ELEMENTALX) {
 			ex_dbs_info->enable = 1;
+		} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
+			sa_dbs_info->enable = 1;
 		} else {
 			od_dbs_info->rate_mult = 1;
 			od_dbs_info->sample_type = OD_NORMAL_SAMPLE;
@@ -459,6 +489,9 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 		if (dbs_data->cdata->governor == GOV_ELEMENTALX)
 			ex_dbs_info->enable = 0;
+
+		if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE)
+			sa_dbs_info->enable = 0;
 
 		gov_cancel_work(dbs_data, policy);
 
