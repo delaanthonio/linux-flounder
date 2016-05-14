@@ -1,5 +1,5 @@
 /*
- *  drivers/cpufreq/cpufreq_sublime.c
+ *  drivers/cpufreq/cpufreq_sublimeactive.c
  *
  *  Copyright (C)  2001 Russell King
  *            (C)  2003 Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>.
@@ -28,7 +28,7 @@
 
 #include "cpufreq_governor.h"
 
-/* Sublime governor macros */
+/* Sublime_active governor macros */
 #define DEF_HIGHSPEED_FREQUENCY_UP_THRESHOLD (95)
 #define DEF_FREQUENCY_UP_THRESHOLD           (70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD         (30)
@@ -42,7 +42,7 @@
 #define MIN_FREQUENCY_DELTA                  (10000)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
-static DEFINE_PER_CPU(struct sb_cpu_dbs_info_s, sb_cpu_dbs_info);
+static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
 /* Return a value to add to or subtract from the current CPU frequency.
  * The freq_target_delta, should be the absolute value of the distance between
@@ -72,12 +72,12 @@ static inline unsigned int prop_freq_delta(unsigned int freq_target_delta,
  * try to increase the frequency. Every sampling_rate if the current idle
  * time is more than 70% (default), try to decrease the frequency.
  */
-static void sb_check_cpu(int cpu, unsigned int load)
+static void sa_check_cpu(int cpu, unsigned int load)
 {
-	struct sb_cpu_dbs_info_s *dbs_info = &per_cpu(sb_cpu_dbs_info, cpu);
+	struct sa_cpu_dbs_info_s *dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 	struct dbs_data *dbs_data = policy->governor_data;
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 	unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
 	unsigned int freq_target_delta;
@@ -88,10 +88,10 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	unsigned int load_multiplier;
 
 	/* Check for input event */
-	if (input_event_boost(sb_tuners->input_event_duration)) {
-		freq_min = sb_tuners->input_event_min_freq;
+	if (input_event_boost(sa_tuners->input_event_duration)) {
+		freq_min = sa_tuners->input_event_min_freq;
 
-		if (load >= sb_tuners->up_threshold) {
+		if (load >= sa_tuners->up_threshold) {
 			freq_target_delta = policy->max - freq_min;
 			freq_target = freq_target_delta * load / MAXIMUM_LOAD;
 			freq_target += freq_min;
@@ -103,7 +103,7 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	}
 
 	/* Check for frequency decrease */
-	else if (load < sb_tuners->down_threshold) {
+	else if (load < sa_tuners->down_threshold) {
 
 		// break out early if the frequency is set to the minimum
 		if (policy->cur == policy->min)
@@ -119,12 +119,12 @@ static void sb_check_cpu(int cpu, unsigned int load)
 	}
 
 	/* Check for frequency increase */
-	else if (load >= max(sb_tuners->up_threshold, prev_load)) {
+	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
 
-		 if (load >= sb_tuners->highspeed_up_threshold)
+		 if (load >= sa_tuners->highspeed_up_threshold)
 			 freq_max = policy->max;
 		 else
-			 freq_max = sb_tuners->highspeed_freq;
+			 freq_max = sa_tuners->highspeed_freq;
 
 		 if (policy->cur >= freq_max)
 			 return;
@@ -140,20 +140,20 @@ static void sb_check_cpu(int cpu, unsigned int load)
 
 }
 
-static void sb_dbs_timer(struct work_struct *work)
+static void sa_dbs_timer(struct work_struct *work)
 {
-	struct sb_cpu_dbs_info_s *dbs_info = container_of(work,
-			struct sb_cpu_dbs_info_s, cdbs.work.work);
+	struct sa_cpu_dbs_info_s *dbs_info = container_of(work,
+			struct sa_cpu_dbs_info_s, cdbs.work.work);
 	unsigned int cpu = dbs_info->cdbs.cur_policy->cpu;
-	struct sb_cpu_dbs_info_s *core_dbs_info = &per_cpu(sb_cpu_dbs_info,
+	struct sa_cpu_dbs_info_s *core_dbs_info = &per_cpu(sa_cpu_dbs_info,
 			cpu);
 	struct dbs_data *dbs_data = dbs_info->cdbs.cur_policy->governor_data;
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
-	int delay = delay_for_sampling_rate(sb_tuners->sampling_rate);
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	int delay = delay_for_sampling_rate(sa_tuners->sampling_rate);
 	bool modify_all = true;
 
 	mutex_lock(&core_dbs_info->cdbs.timer_mutex);
-	if (!need_load_eval(&core_dbs_info->cdbs, sb_tuners->sampling_rate))
+	if (!need_load_eval(&core_dbs_info->cdbs, sa_tuners->sampling_rate))
 		modify_all = false;
 	else
 		dbs_check_cpu(dbs_data, cpu);
@@ -166,8 +166,8 @@ static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 		void *data)
 {
 	struct cpufreq_freqs *freq = data;
-	struct sb_cpu_dbs_info_s *dbs_info =
-					&per_cpu(sb_cpu_dbs_info, freq->cpu);
+	struct sa_cpu_dbs_info_s *dbs_info =
+					&per_cpu(sa_cpu_dbs_info, freq->cpu);
 	struct cpufreq_policy *policy;
 
 	if (dbs_info->enable)
@@ -177,12 +177,12 @@ static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 }
 
 /************************** sysfs interface ************************/
-static struct common_dbs_data sb_dbs_cdata;
+static struct common_dbs_data sa_dbs_cdata;
 
 static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
@@ -190,61 +190,61 @@ static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 	if (ret != 1)
 		return -EINVAL;
 
-	sb_tuners->sampling_rate = max(input, dbs_data->min_sampling_rate);
+	sa_tuners->sampling_rate = max(input, dbs_data->min_sampling_rate);
 	return count;
 }
 
 static ssize_t store_highspeed_up_threshold(struct dbs_data *dbs_data, const char *buf,
 				  size_t count)
 {
-    struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+    struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
     unsigned int input;
     int ret;
     ret = sscanf(buf, "%u", &input);
 
-    if (ret != 1 || input > MAXIMUM_LOAD || input <= sb_tuners->up_threshold)
+    if (ret != 1 || input > MAXIMUM_LOAD || input <= sa_tuners->up_threshold)
 	    return -EINVAL;
 
-    sb_tuners->highspeed_up_threshold = input;
+    sa_tuners->highspeed_up_threshold = input;
     return count;
 }
 
 static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input >= sb_tuners->highspeed_up_threshold ||
-                input <= sb_tuners->down_threshold)
+	if (ret != 1 || input >= sa_tuners->highspeed_up_threshold ||
+                input <= sa_tuners->down_threshold)
 		return -EINVAL;
 
-	sb_tuners->up_threshold = input;
+	sa_tuners->up_threshold = input;
 	return count;
 }
 
 static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
 	if (ret != 1 || input < MINIMUM_LOAD ||
-                input >= sb_tuners->up_threshold)
+                input >= sa_tuners->up_threshold)
 		return -EINVAL;
 
-	sb_tuners->down_threshold = input;
+	sa_tuners->down_threshold = input;
 	return count;
 }
 
 static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
 	unsigned int cpu;
@@ -258,7 +258,7 @@ static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
          * all CPUs and at least the greatest minimum frequency of all CPUs
          */
 	for_each_online_cpu(cpu) {
-		struct sb_cpu_dbs_info_s *dbs_info = &per_cpu(sb_cpu_dbs_info,
+		struct sa_cpu_dbs_info_s *dbs_info = &per_cpu(sa_cpu_dbs_info,
                         cpu);
 		struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 
@@ -269,14 +269,14 @@ static ssize_t store_highspeed_freq(struct dbs_data *dbs_data, const char *buf,
 			input  = policy->max;
         }
 
-	sb_tuners->highspeed_freq = input;
+	sa_tuners->highspeed_freq = input;
 	return count;
 }
 
 static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
 	unsigned int cpu;
@@ -290,7 +290,7 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
          * all CPUs and at least the greatest minimum frequency of all CPUs
          */
 	for_each_online_cpu(cpu) {
-		struct sb_cpu_dbs_info_s *dbs_info = &per_cpu(sb_cpu_dbs_info,
+		struct sa_cpu_dbs_info_s *dbs_info = &per_cpu(sa_cpu_dbs_info,
 							      cpu);
 		struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 
@@ -301,14 +301,14 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 			input  = policy->max;
         }
 
-        sb_tuners->input_event_min_freq = input;
+        sa_tuners->input_event_min_freq = input;
 	return count;
 }
 
 static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
-	struct sb_dbs_tuners *sb_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
 	int ret;
@@ -317,18 +317,18 @@ static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
 	if (ret != 1 || input > MAX_INPUT_EVENT_DURATION)
 		return -EINVAL;
 
-	sb_tuners->input_event_duration = input;
+	sa_tuners->input_event_duration = input;
 	return count;
 }
 
-show_store_one(sb, sampling_rate);
-show_store_one(sb, highspeed_up_threshold);
-show_store_one(sb, up_threshold);
-show_store_one(sb, down_threshold);
-show_store_one(sb, highspeed_freq);
-show_store_one(sb, input_event_min_freq);
-show_store_one(sb, input_event_duration);
-declare_show_sampling_rate_min(sb);
+show_store_one(sa, sampling_rate);
+show_store_one(sa, highspeed_up_threshold);
+show_store_one(sa, up_threshold);
+show_store_one(sa, down_threshold);
+show_store_one(sa, highspeed_freq);
+show_store_one(sa, input_event_min_freq);
+show_store_one(sa, input_event_duration);
+declare_show_sampling_rate_min(sa);
 
 gov_sys_pol_attr_rw(sampling_rate);
 gov_sys_pol_attr_rw(highspeed_up_threshold);
@@ -351,9 +351,9 @@ static struct attribute *dbs_attributes_gov_sys[] = {
 	NULL
 };
 
-static struct attribute_group sb_attr_group_gov_sys = {
+static struct attribute_group sa_attr_group_gov_sys = {
 	.attrs = dbs_attributes_gov_sys,
-	.name = "sublime",
+	.name = "sublime_active",
 };
 
 static struct attribute *dbs_attributes_gov_pol[] = {
@@ -368,18 +368,18 @@ static struct attribute *dbs_attributes_gov_pol[] = {
 	NULL
 };
 
-static struct attribute_group sb_attr_group_gov_pol = {
+static struct attribute_group sa_attr_group_gov_pol = {
 	.attrs = dbs_attributes_gov_pol,
-	.name = "sublime",
+	.name = "sublime_active",
 };
 
 /************************** sysfs end ************************/
 
-static int sb_init(struct dbs_data *dbs_data)
+static int sa_init(struct dbs_data *dbs_data)
 {
-	struct sb_dbs_tuners *tuners;
+	struct sa_dbs_tuners *tuners;
 
-	tuners = kzalloc(sizeof(struct sb_dbs_tuners), GFP_KERNEL);
+	tuners = kzalloc(sizeof(struct sa_dbs_tuners), GFP_KERNEL);
 	if (!tuners) {
 		pr_err("%s: kzalloc failed\n", __func__);
 		return -ENOMEM;
@@ -397,68 +397,68 @@ static int sb_init(struct dbs_data *dbs_data)
 	return 0;
 }
 
-static void sb_exit(struct dbs_data *dbs_data)
+static void sa_exit(struct dbs_data *dbs_data)
 {
 	kfree(dbs_data->tuners);
 }
 
-define_get_cpu_dbs_routines(sb_cpu_dbs_info);
+define_get_cpu_dbs_routines(sa_cpu_dbs_info);
 
-static struct notifier_block sb_cpufreq_notifier_block = {
+static struct notifier_block sa_cpufreq_notifier_block = {
 	.notifier_call = dbs_cpufreq_notifier,
 };
 
-static struct sb_ops sb_ops = {
-	.notifier_block = &sb_cpufreq_notifier_block,
+static struct sa_ops sa_ops = {
+	.notifier_block = &sa_cpufreq_notifier_block,
 };
 
-static struct common_dbs_data sb_dbs_cdata = {
-	.governor = GOV_SUBLIME,
-	.attr_group_gov_sys = &sb_attr_group_gov_sys,
-	.attr_group_gov_pol = &sb_attr_group_gov_pol,
+static struct common_dbs_data sa_dbs_cdata = {
+	.governor = GOV_SUBLIMEACTIVE,
+	.attr_group_gov_sys = &sa_attr_group_gov_sys,
+	.attr_group_gov_pol = &sa_attr_group_gov_pol,
 	.get_cpu_cdbs = get_cpu_cdbs,
 	.get_cpu_dbs_info_s = get_cpu_dbs_info_s,
-	.gov_dbs_timer = sb_dbs_timer,
-	.gov_check_cpu = sb_check_cpu,
-	.gov_ops = &sb_ops,
-	.init = sb_init,
-	.exit = sb_exit,
+	.gov_dbs_timer = sa_dbs_timer,
+	.gov_check_cpu = sa_check_cpu,
+	.gov_ops = &sa_ops,
+	.init = sa_init,
+	.exit = sa_exit,
 };
 
-static int sb_cpufreq_governor_dbs(struct cpufreq_policy *policy,
+static int sa_cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				   unsigned int event)
 {
-	return cpufreq_governor_dbs(policy, &sb_dbs_cdata, event);
+	return cpufreq_governor_dbs(policy, &sa_dbs_cdata, event);
 }
 
-#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIME
+#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIMEACTIVE
 static
 #endif
-struct cpufreq_governor cpufreq_gov_sublime = {
-	.name			= "sublime",
-	.governor		= sb_cpufreq_governor_dbs,
+struct cpufreq_governor cpufreq_gov_sublimeactive = {
+	.name			= "sublime_active",
+	.governor		= sa_cpufreq_governor_dbs,
 	.max_transition_latency	= TRANSITION_LATENCY_LIMIT,
 	.owner			= THIS_MODULE,
 };
 
 static int __init cpufreq_gov_dbs_init(void)
 {
-	return cpufreq_register_governor(&cpufreq_gov_sublime);
+	return cpufreq_register_governor(&cpufreq_gov_sublimeactive);
 }
 
 static void __exit cpufreq_gov_dbs_exit(void)
 {
-	cpufreq_unregister_governor(&cpufreq_gov_sublime);
+	cpufreq_unregister_governor(&cpufreq_gov_sublimeactive);
 }
 
 MODULE_AUTHOR("Dela Anthonio");
-MODULE_DESCRIPTION("'cpufreq_sublime' - A dynamic cpufreq governor for "
+MODULE_DESCRIPTION("'cpufreq_sublimeactive' - A dynamic cpufreq governor for "
 		"Low Latency Frequency Transition capable processors "
 		"optimized for devices with the Tegra K1 processor"
 		"and have limited battry life");
 MODULE_LICENSE("GPL");
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIME
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIMEACTIVE
 fs_initcall(cpufreq_gov_dbs_init);
 #else
 module_init(cpufreq_gov_dbs_init);
