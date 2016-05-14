@@ -17,7 +17,7 @@ GZFLAGS		:=-9
 
 LIBGCC 		:= $(shell $(CC) $(KBUILD_CFLAGS) -print-libgcc-file-name)
 
-KBUILD_DEFCONFIG := defconfig
+KBUILD_DEFCONFIG := sublime_defconfig
 
 GRAPHITE_FLAGS := \
 	-fgraphite \
