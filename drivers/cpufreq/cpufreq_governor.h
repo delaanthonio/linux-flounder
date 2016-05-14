@@ -204,10 +204,8 @@ struct cs_dbs_tuners {
 
 struct sa_dbs_tuners {
 	unsigned int sampling_rate;
-	unsigned int highspeed_up_threshold;
 	unsigned int up_threshold;
 	unsigned int down_threshold;
-	unsigned int highspeed_freq;
 	unsigned int input_event_min_freq;
 	unsigned int input_event_duration;
 };
