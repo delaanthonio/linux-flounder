@@ -2,6 +2,7 @@
  * Copyright (C) 2003 Christophe Saout <christophe@saout.de>
  * Copyright (C) 2004 Clemens Fruhwirth <clemens@endorphin.org>
  * Copyright (C) 2006-2009 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, NVIDIA CORPORATION. All rights reserved.
  *
  * This file is released under the GPL.
  */
@@ -740,6 +741,7 @@ static void crypt_free_req(struct crypt_config *cc,
 			   struct ablkcipher_request *req, struct bio *base_bio)
 {
 	struct dm_crypt_io *io = dm_per_bio_data(base_bio, cc->per_bio_data_size);
+
 	if ((struct ablkcipher_request *)(io + 1) != req)
 		mempool_free(req, cc->req_pool);
 }
@@ -803,11 +805,11 @@ static void crypt_free_buffer_pages(struct crypt_config *cc, struct bio *clone);
  * the mempool concurrently, it may deadlock in a situation where both processes
  * have allocated 128 pages and the mempool is exhausted.
  *
- * In order to avoid this scenarios, we allocate the pages under a mutex.
+ * In order to avoid this scenario we allocate the pages under a mutex.
  *
  * In order to not degrade performance with excessive locking, we try
- * non-blocking allocations without a mutex first and if it fails, we fallback
- * to a blocking allocation with a mutex.
+ * non-blocking allocations without a mutex first but on failure we fallback
+ * to blocking allocations with a mutex.
  */
 static struct bio *crypt_alloc_buffer(struct dm_crypt_io *io, unsigned size)
 {
@@ -850,7 +852,7 @@ retry:
 		clone->bi_size += len;
 
 		remaining_size -= len;
-        }
+	}
 
 return_clone:
 	if (unlikely(gfp_mask & __GFP_WAIT))
@@ -1010,9 +1012,13 @@ static void kcryptd_io_write(struct dm_crypt_io *io)
 	generic_make_request(clone);
 }
 
+#define crypt_io_from_node(node) rb_entry((node), struct dm_crypt_io, rb_node)
+
 static int dmcrypt_write(void *data)
 {
 	struct crypt_config *cc = data;
+	struct dm_crypt_io *io;
+
 	while (1) {
 		struct rb_root write_tree;
 		struct blk_plug plug;
@@ -1056,8 +1062,7 @@ pop_from_list:
 		 */
 		blk_start_plug(&plug);
 		do {
-			struct dm_crypt_io *io = rb_entry(rb_first(&write_tree),
-						struct dm_crypt_io, rb_node);
+			io = crypt_io_from_node(rb_first(&write_tree));
 			rb_erase(&io->rb_node, &write_tree);
 			kcryptd_io_write(io);
 		} while (!RB_EMPTY_ROOT(&write_tree));
@@ -1066,13 +1071,13 @@ pop_from_list:
 	return 0;
 }
 
-static void kcryptd_crypt_write_io_submit(struct dm_crypt_io *io)
+static void kcryptd_crypt_write_io_submit(struct dm_crypt_io *io, int async)
 {
 	struct bio *clone = io->ctx.bio_out;
 	struct crypt_config *cc = io->cc;
 	unsigned long flags;
 	sector_t sector;
-	struct rb_node **p, *parent;
+	struct rb_node **rbp, *parent;
 
 	if (unlikely(io->error < 0)) {
 		crypt_free_buffer_pages(cc, clone);
@@ -1087,19 +1092,17 @@ static void kcryptd_crypt_write_io_submit(struct dm_crypt_io *io)
 	clone->bi_sector = cc->start + io->sector;
 
 	spin_lock_irqsave(&cc->write_thread_wait.lock, flags);
-	p = &cc->write_tree.rb_node;
+	rbp = &cc->write_tree.rb_node;
 	parent = NULL;
 	sector = io->sector;
-	while (*p) {
-		parent = *p;
-#define io_node rb_entry(parent, struct dm_crypt_io, rb_node)
-		if (sector < io_node->sector)
-			p = &io_node->rb_node.rb_left;
+	while (*rbp) {
+		parent = *rbp;
+		if (sector < crypt_io_from_node(parent)->sector)
+			rbp = &(*rbp)->rb_left;
 		else
-			p = &io_node->rb_node.rb_right;
-#undef io_node
+			rbp = &(*rbp)->rb_right;
 	}
-	rb_link_node(&io->rb_node, parent, p);
+	rb_link_node(&io->rb_node, parent, rbp);
 	rb_insert_color(&io->rb_node, &cc->write_tree);
 
 	wake_up_locked(&cc->write_thread_wait);
@@ -1127,7 +1130,6 @@ static void kcryptd_crypt_write_convert(struct dm_crypt_io *io)
 	}
 
 	io->ctx.bio_out = clone;
-	//io->ctx.iter_out = clone->bi_iter;
 
 	sector += bio_sectors(clone);
 
@@ -1139,10 +1141,10 @@ static void kcryptd_crypt_write_convert(struct dm_crypt_io *io)
 
 	/* Encryption was already finished, submit io now */
 	if (crypt_finished) {
-		kcryptd_crypt_write_io_submit(io);
+		kcryptd_crypt_write_io_submit(io, 0);
 		io->sector = sector;
-
 	}
+
 dec:
 	crypt_dec_pending(io);
 }
@@ -1199,7 +1201,7 @@ static void kcryptd_async_done(struct crypto_async_request *async_req,
 	if (bio_data_dir(io->base_bio) == READ)
 		kcryptd_crypt_read_done(io);
 	else
-		kcryptd_crypt_write_io_submit(io);
+		kcryptd_crypt_write_io_submit(io, 1);
 }
 
 static void kcryptd_crypt(struct work_struct *work)
@@ -1536,6 +1538,7 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	unsigned int key_size, opt_params;
 	unsigned long long tmpll;
 	int ret;
+	size_t iv_size_padding;
 	struct dm_arg_set as;
 	const char *opt_string;
 	char dummy;
@@ -1565,21 +1568,33 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 
 	cc->dmreq_start = sizeof(struct ablkcipher_request);
 	cc->dmreq_start += crypto_ablkcipher_reqsize(any_tfm(cc));
-	cc->dmreq_start = ALIGN(cc->dmreq_start, crypto_tfm_ctx_alignment());
-	cc->dmreq_start += crypto_ablkcipher_alignmask(any_tfm(cc)) &
-			   ~(crypto_tfm_ctx_alignment() - 1);
+	cc->dmreq_start = ALIGN(cc->dmreq_start, __alignof__(struct dm_crypt_request));
+
+	if (crypto_ablkcipher_alignmask(any_tfm(cc)) < CRYPTO_MINALIGN) {
+		/* Allocate the padding exactly */
+		iv_size_padding = -(cc->dmreq_start + sizeof(struct dm_crypt_request))
+				& crypto_ablkcipher_alignmask(any_tfm(cc));
+	} else {
+		/*
+		 * If the cipher requires greater alignment than kmalloc
+		 * alignment, we don't know the exact position of the
+		 * initialization vector. We must assume worst case.
+		 */
+		iv_size_padding = crypto_ablkcipher_alignmask(any_tfm(cc));
+	}
 
 	ret = -ENOMEM;
 	cc->req_pool = mempool_create_kmalloc_pool(MIN_IOS, cc->dmreq_start +
-			sizeof(struct dm_crypt_request) + cc->iv_size);
+			sizeof(struct dm_crypt_request) + iv_size_padding + cc->iv_size);
 	if (!cc->req_pool) {
 		ti->error = "Cannot allocate crypt request mempool";
 		goto bad;
 	}
 
 	cc->per_bio_data_size = ti->per_bio_data_size =
-				sizeof(struct dm_crypt_io) + cc->dmreq_start +
-				sizeof(struct dm_crypt_request) + cc->iv_size;
+		ALIGN(sizeof(struct dm_crypt_io) + cc->dmreq_start +
+		      sizeof(struct dm_crypt_request) + iv_size_padding + cc->iv_size,
+		      ARCH_KMALLOC_MINALIGN);
 
 	cc->page_pool = mempool_create_page_pool(BIO_MAX_PAGES, 0);
 	if (!cc->page_pool) {
@@ -1638,15 +1653,20 @@ static int crypt_ctr(struct dm_target *ti, unsigned int argc, char **argv)
 	}
 
 	ret = -ENOMEM;
-	cc->io_queue = alloc_workqueue("kcryptd_io", WQ_MEM_RECLAIM, 1);
+	cc->io_queue = alloc_workqueue("kcryptd_io",
+				       WQ_HIGHPRI |
+				       WQ_NON_REENTRANT|
+				       WQ_MEM_RECLAIM,
+				       1);
 	if (!cc->io_queue) {
 		ti->error = "Couldn't create kcryptd io queue";
 		goto bad;
 	}
 
 	cc->crypt_queue = alloc_workqueue("kcryptd",
-					  WQ_CPU_INTENSIVE | WQ_MEM_RECLAIM |
-					  WQ_UNBOUND, num_possible_cpus() * 2);
+					  WQ_HIGHPRI |
+					  WQ_MEM_RECLAIM |
+					  WQ_UNBOUND, num_online_cpus());
 	if (!cc->crypt_queue) {
 		ti->error = "Couldn't create kcryptd queue";
 		goto bad;
@@ -1691,10 +1711,8 @@ static int crypt_map(struct dm_target *ti, struct bio *bio)
 		return DM_MAPIO_REMAPPED;
 	}
 
-
 	io = dm_per_bio_data(bio, cc->per_bio_data_size);
-	crypt_io_init(io, cc, bio,
-			dm_target_offset(ti, bio->bi_sector));
+	crypt_io_init(io, cc, bio, dm_target_offset(ti, bio->bi_sector));
 	io->ctx.req = (struct ablkcipher_request *)(io + 1);
 
 	if (bio_data_dir(io->base_bio) == READ) {
@@ -1846,9 +1864,8 @@ static int __init dm_crypt_init(void)
 	int r;
 
 	r = dm_register_target(&crypt_target);
-	if (r < 0) {
+	if (r < 0)
 		DMERR("register failed %d", r);
-	}
 
 	return r;
 }
