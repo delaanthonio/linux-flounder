@@ -303,35 +303,25 @@ boostpulse_duration: Length of time to hold CPU speed at hispeed_freq
 on a write to boostpulse, before allowing speed to drop according to
 load as usual.  Default is 80000 uS.
 
-2.7 Sublime
+2.7 Sublime Active
 -----------
-The CPU frequency governor "sublime" sets the CPU speed based on
-the current usage and whether an input event has occured on the touchscreen.
-Frequency increases are proportional to the load and the
-and the difference between the current speed and maximum speed. As the load gets
-higher, the speed will increase in larger steps. As the distance between the
-current speed and maximum speed gets Lower, the speed will increase in
-smaller steps. Likewise, Decreases in the CPU speed are inversely proportional
-to the load and proportional to the difference between the current speed and the
-minimum speed. When an input event is detected, the frequency will be set to the
-minimum input event speed or a value proportional to the load and speed.
-The tunable values of "sublime consist of":
+The CPU frequency governor "sublime_active" sets the CPU speed based on
+the current usage and whether an input event has occurred on the touchscreen.
+Frequency increases are half of the difference between the current frequency
+and the maximum frequency. As the frequency gets higher, it will be boosted in
+smaller increments. Likewise, when reducing the CPU frequency, decrease it by
+half of the difference between the current frequency and minimum frequency.
+Additionally, when an input event is detected, the frequency is set to a value
+that is proportional to the load and at least the minimum input event frequency
+or the maximum frequency. The tunable values of "sublime consist of":
 
 up_threshold: same as the 'up_threshold' found for the "ondemand"
-governor. However the frequency will not increase if it is at least the
-high-speed frequency.
-
-highspeed_up_threshold: Similar to 'up_threshold' found for the "ondemand"
-governor. When the CPU load is above this threshold, the CPU frequency
-can exceed the high-speed frequency and reach the maximum frequency.
+governor. The frequency will be increased if the load exceeds this threshold .
 
 down_threshold: same as the 'up_threshold' found for the "ondemand"
-governor but for the opposite direction. For example, when set to its
-default value of '30', The CPU usage needs to be below
-30% between samples to have the frequency decreased.
-
-highspeed_freq: This acts as a limit for the CPU frequency when the load is
-greater than the up_threshold tunable and less than the highspeed_up_threshold.
+governor but for the opposite direction. For example, when set to its default
+value of '30', The CPU usage needs to be below 30% between samples for the
+frequency decreased.
 
 input_event_min_freq: The minimum CPU frequency during and input event boost.
 Ideally, it should be the minimum frequency at which the screen can
