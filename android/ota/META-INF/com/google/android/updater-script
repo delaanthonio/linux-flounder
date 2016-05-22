@@ -1,0 +1,52 @@
+#     Copyright (C) 2016 Dela Anthonio <dell.anthonio@gmail.com>
+#
+#     This program is free software: you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation, either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+set_progress(0.0);
+ui_print("");
+ui_print("Installing Sublime...");
+
+set_progress(0.1);
+
+package_extract_dir("config", "/tmp");
+set_perm(0, 0, 0777, "/tmp/busybox");
+
+set_progress(0.3);
+
+package_extract_dir("boot", "/tmp");
+set_perm(0, 0, 0777, "/tmp/editramdisk.sh");
+set_perm(0, 0, 0777, "/tmp/makebootimg.sh");
+set_perm(0, 0, 0777, "/tmp/mkbootimg");
+set_perm(0, 0, 0777, "/tmp/unpackbootimg");
+
+ui_print("Customizing ramdisk");
+set_progress(0.5);
+run_program("/tmp/busybox", "dd", "if=/dev/block/platform/sdhci-tegra.3/by-name/LNX", "of=/tmp/boot.img");
+run_program("/tmp/unpackbootimg", "-i", "/tmp/boot.img", "-o", "/tmp/");
+run_program("/tmp/editramdisk.sh");
+run_program("/tmp/makebootimg.sh");
+
+set_progress(0.7);
+ui_print("Installing Kernel");
+run_program("/tmp/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform/sdhci-tegra.3/by-name/LNX");
+
+set_progress(0.9);
+# ui_print("Formatting cache");
+# unmount("/cache");
+# run_program("/sbin/mke2fs", "-t", "ext4", "/dev/block/platform/sdhci-tegra.3/by-name/CAC");
+
+ui_print("");
+ui_print("");
+set_progress(1.0);
+ui_print("Finished!");
