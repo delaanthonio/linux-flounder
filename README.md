@@ -32,26 +32,26 @@ libgl1-mesa-dev libxml2-utils xsltproc unzip
 ## Building Instructions
 
 See the [manifest repository](https://github.com/Sublime-Development/android_manifest) for automated building instructions.
- 
+
 First, create a project directory
 ```bash
-$ mkdir Sublime-N9 && cd Sublime-N9
+$ mkdir flounder && cd flounder
   ```
 Next, download the preferred toolchain for building the kernel
 ```bash
-$ git clone https://bitbucket.org/UBERTC/aarch64-linux-android-4.9 ubertc-4.9
+$ git clone https://bitbucket.org/UBERTC/aarch64-linux-android-4.9-kernel.git ubertc-4.9
   ```
-After that, dowload the source   
+After that, download the source   
 ```bash
-$ git clone https://github.com/Sublime-Development/Sublime_N9_Manifest.git kernel-flounder
+$ git clone https://github.com/Beta1440/Sublime-N9.git sublime-n9
   ```
 Next, set the cross compiler prefix
 ```bash
-$ export CROSS_COMPILE=$(pwd)/ubertc-4.9/bin/aach64-linux-android-
+$ export CROSS_COMPILE=$(pwd)/ubertc-4.9/bin/aarch64-linux-android-
   ```
 Finally, build the kernel
 ```bash
-$ cd kernel-flounder
+$ cd sublime-n9
 $ make sublime_defconfig
 $ make -j4
   ```
