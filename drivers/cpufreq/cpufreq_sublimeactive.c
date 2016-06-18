@@ -56,34 +56,24 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	const struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	const unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
-	unsigned int freq_target_delta;
-	unsigned int freq_min;
-
-	/* Check for input event */
-	if (input_event_boost(sa_tuners->input_event_duration)) {
-		freq_min = sa_tuners->input_event_min_freq;
-
-		if (load >= sa_tuners->up_threshold) {
-			freq_target_delta = policy->max - freq_min;
-			freq_target = freq_target_delta * load / MAXIMUM_LOAD;
-			freq_target += freq_min;
-		}
-
-		else freq_target = freq_min;
-
-		__cpufreq_driver_target(policy, freq_target, CPUFREQ_RELATION_H);
-	}
+	const bool input_event = input_event_boost(sa_tuners->input_event_duration);
 
 	/* Check for frequency decrease */
-	else if (load < sa_tuners->down_threshold) {
+	if (load < sa_tuners->down_threshold) {
 
 		// break out early if the frequency is set to the minimum
 		if (policy->cur == policy->min)
 			return;
 
-		freq_target = policy->cur + policy->min;
-		freq_target >>= FREQUENCY_DELTA_OFFSET;
-		freq_target = max(freq_target, policy->min);
+		if (input_event)
+			freq_target = sa_tuners->input_event_min_freq;
+
+		else {
+			freq_target = policy->cur + policy->min;
+			freq_target >>= FREQUENCY_DELTA_OFFSET;
+			freq_target = max(freq_target, policy->min);
+		}
+
 		__cpufreq_driver_target(policy, freq_target,
 					CPUFREQ_RELATION_L);
 	}
@@ -91,11 +81,13 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	/* Check for frequency increase */
 	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
 
-		 freq_target = policy->cur + policy->max;
-		 freq_target >>= FREQUENCY_DELTA_OFFSET;
-		 freq_target = min(freq_target, policy->max);
+		freq_target = policy->max + policy->cur;
+		freq_target >>= FREQUENCY_DELTA_OFFSET;
+		if (input_event && freq_target < sa_tuners->input_event_min_freq)
+			freq_target = sa_tuners->input_event_min_freq;
+		freq_target = min(freq_target, policy->max);
 
-		 __cpufreq_driver_target(policy, freq_target,
+		__cpufreq_driver_target(policy, freq_target,
 					 CPUFREQ_RELATION_H);
 	}
 
