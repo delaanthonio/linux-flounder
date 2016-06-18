@@ -50,11 +50,11 @@ static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
  */
 static void sa_check_cpu(int cpu, unsigned int load)
 {
-	struct sa_cpu_dbs_info_s *dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
+	struct sa_cpu_dbs_info_s const *dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
-	struct dbs_data *dbs_data = policy->governor_data;
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
-	unsigned int prev_load = dbs_info->cdbs.prev_load;
+	struct dbs_data* const dbs_data = policy->governor_data;
+	const struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
+	const unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
 	unsigned int freq_target_delta;
 	unsigned int freq_min;
@@ -109,7 +109,7 @@ static void sa_dbs_timer(struct work_struct *work)
 	struct sa_cpu_dbs_info_s *core_dbs_info = &per_cpu(sa_cpu_dbs_info,
 			cpu);
 	struct dbs_data *dbs_data = dbs_info->cdbs.cur_policy->governor_data;
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	int delay = delay_for_sampling_rate(sa_tuners->sampling_rate);
 	bool modify_all = true;
 
@@ -143,7 +143,7 @@ static struct common_dbs_data sa_dbs_cdata;
 static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
@@ -158,7 +158,7 @@ static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
 static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
@@ -174,7 +174,7 @@ static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
 {
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	unsigned int input;
 	int ret;
 	ret = sscanf(buf, "%u", &input);
@@ -190,7 +190,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
 	unsigned int cpu;
@@ -204,9 +204,8 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
          * all CPUs and at least the greatest minimum frequency of all CPUs
          */
 	for_each_online_cpu(cpu) {
-		struct sa_cpu_dbs_info_s *dbs_info = &per_cpu(sa_cpu_dbs_info,
-							      cpu);
-		struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
+		struct sa_cpu_dbs_info_s* const dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
+		const struct cpufreq_policy* const policy = dbs_info->cdbs.cur_policy;
 
 		if (input < policy->min)
 			input = policy->min;
@@ -222,7 +221,7 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
-	struct sa_dbs_tuners *sa_tuners = dbs_data->tuners;
+	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
 	int ret;
