@@ -36,7 +36,7 @@
 #define DEF_INPUT_EVENT_MIN_FREQUENCY        (1428000)
 #define DEF_INPUT_EVENT_DURATION             (50000)
 #define MAX_INPUT_EVENT_DURATION             (200000)
-#define FREQUENCY_DELTA_OFFSET               (1)
+#define RESISTANCE_OFFSET                    (1)
 #define MIN_FREQUENCY_DELTA                  (10000)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
@@ -72,7 +72,7 @@ static void sa_check_cpu(int cpu, unsigned int load)
 
 		else {
 			freq_target = freq_cur + freq_min;
-			freq_target >>= FREQUENCY_DELTA_OFFSET;
+			freq_target >>= RESISTANCE_OFFSET;
 		}
 
 		__cpufreq_driver_target(policy, freq_target,
@@ -88,7 +88,7 @@ static void sa_check_cpu(int cpu, unsigned int load)
 			return;
 
 		freq_target = freq_max + freq_cur;
-		freq_target >>= FREQUENCY_DELTA_OFFSET;
+		freq_target >>= RESISTANCE_OFFSET;
 		if (input_event && freq_target < sa_tuners->input_event_min_freq)
 			freq_target = sa_tuners->input_event_min_freq;
 
