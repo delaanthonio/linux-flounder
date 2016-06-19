@@ -55,23 +55,25 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	struct dbs_data* const dbs_data = policy->governor_data;
 	const struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	const unsigned int prev_load = dbs_info->cdbs.prev_load;
+	const unsigned int freq_cur = policy->cur;
 	unsigned int freq_target = 0;
 	const bool input_event = input_event_boost(sa_tuners->input_event_duration);
 
 	/* Check for frequency decrease */
 	if (load < sa_tuners->down_threshold) {
+		const unsigned int freq_min = policy->min;
 
 		// break out early if the frequency is set to the minimum
-		if (policy->cur == policy->min)
+		if (freq_cur == freq_min)
 			return;
 
 		if (input_event)
 			freq_target = sa_tuners->input_event_min_freq;
 
 		else {
-			freq_target = policy->cur + policy->min;
+			freq_target = freq_cur + freq_min;
 			freq_target >>= FREQUENCY_DELTA_OFFSET;
-			freq_target = max(freq_target, policy->min);
+			freq_target = max(freq_target, freq_min);
 		}
 
 		__cpufreq_driver_target(policy, freq_target,
@@ -80,16 +82,17 @@ static void sa_check_cpu(int cpu, unsigned int load)
 
 	/* Check for frequency increase */
 	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
+		const unsigned int freq_max = policy->max;
 
 		// stop if the frequency is at the maxmimum value
-		if (policy->cur == policy->max)
+		if (freq_cur == freq_max)
 			return;
 
-		freq_target = policy->max + policy->cur;
+		freq_target = freq_max + freq_cur;
 		freq_target >>= FREQUENCY_DELTA_OFFSET;
 		if (input_event && freq_target < sa_tuners->input_event_min_freq)
 			freq_target = sa_tuners->input_event_min_freq;
-		freq_target = min(freq_target, policy->max);
+		freq_target = min(freq_target, freq_max);
 
 		__cpufreq_driver_target(policy, freq_target,
 					 CPUFREQ_RELATION_H);
