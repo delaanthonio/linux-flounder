@@ -81,6 +81,10 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	/* Check for frequency increase */
 	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
 
+		// stop if the frequency is at the maxmimum value
+		if (policy->cur == policy->max)
+			return;
+
 		freq_target = policy->max + policy->cur;
 		freq_target >>= FREQUENCY_DELTA_OFFSET;
 		if (input_event && freq_target < sa_tuners->input_event_min_freq)
