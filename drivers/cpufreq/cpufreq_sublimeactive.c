@@ -73,7 +73,6 @@ static void sa_check_cpu(int cpu, unsigned int load)
 		else {
 			freq_target = freq_cur + freq_min;
 			freq_target >>= FREQUENCY_DELTA_OFFSET;
-			freq_target = max(freq_target, freq_min);
 		}
 
 		__cpufreq_driver_target(policy, freq_target,
@@ -92,7 +91,6 @@ static void sa_check_cpu(int cpu, unsigned int load)
 		freq_target >>= FREQUENCY_DELTA_OFFSET;
 		if (input_event && freq_target < sa_tuners->input_event_min_freq)
 			freq_target = sa_tuners->input_event_min_freq;
-		freq_target = min(freq_target, freq_max);
 
 		__cpufreq_driver_target(policy, freq_target,
 					 CPUFREQ_RELATION_H);
