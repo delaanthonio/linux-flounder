@@ -86,8 +86,9 @@ static void sa_check_cpu(int cpu, unsigned int load)
 			return;
 
 		freq_target = (freq_max + freq_cur) >> RESISTANCE_OFFSET;
-		if (input_event && freq_target < sa_tuners->input_event_min_freq)
-			freq_target = sa_tuners->input_event_min_freq;
+		if (input_event)
+			freq_target = max(freq_target,
+				          sa_tuners->input_event_min_freq);
 
 		__cpufreq_driver_target(policy, freq_target,
 					 CPUFREQ_RELATION_H);
