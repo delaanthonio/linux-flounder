@@ -37,7 +37,6 @@
 #define DEF_INPUT_EVENT_DURATION             (50000)
 #define MAX_INPUT_EVENT_DURATION             (200000)
 #define RESISTANCE_OFFSET                    (1)
-#define MIN_FREQUENCY_DELTA                  (10000)
 #define MINIMUM_SAMPLING_RATE                (15000)
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
