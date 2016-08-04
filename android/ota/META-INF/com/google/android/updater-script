@@ -15,7 +15,7 @@
 
 set_progress(0.0);
 ui_print("");
-ui_print("Installing Sublime...");
+ui_print("Installing Sublime N9 v2.x.x");
 
 set_progress(0.1);
 
@@ -30,7 +30,6 @@ set_perm(0, 0, 0777, "/tmp/makebootimg.sh");
 set_perm(0, 0, 0777, "/tmp/mkbootimg");
 set_perm(0, 0, 0777, "/tmp/unpackbootimg");
 
-ui_print("Customizing ramdisk");
 set_progress(0.5);
 run_program("/tmp/busybox", "dd", "if=/dev/block/platform/sdhci-tegra.3/by-name/LNX", "of=/tmp/boot.img");
 run_program("/tmp/unpackbootimg", "-i", "/tmp/boot.img", "-o", "/tmp/");
@@ -38,15 +37,8 @@ run_program("/tmp/editramdisk.sh");
 run_program("/tmp/makebootimg.sh");
 
 set_progress(0.7);
-ui_print("Installing Kernel");
 run_program("/tmp/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform/sdhci-tegra.3/by-name/LNX");
 
-set_progress(0.9);
-# ui_print("Formatting cache");
-# unmount("/cache");
-# run_program("/sbin/mke2fs", "-t", "ext4", "/dev/block/platform/sdhci-tegra.3/by-name/CAC");
-
-ui_print("");
 ui_print("");
 set_progress(1.0);
-ui_print("Finished!");
+ui_print("Sublime N9 v2.x.x installed");
