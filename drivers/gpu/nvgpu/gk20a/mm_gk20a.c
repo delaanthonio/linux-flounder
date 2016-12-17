@@ -2407,6 +2407,7 @@ int gk20a_vm_bind_channel(struct gk20a_as_share *as_share,
 
 	gk20a_dbg_fn("");
 
+	gk20a_vm_get(vm);
 	ch->vm = vm;
 	err = channel_gk20a_commit_va(ch);
 	if (err)
@@ -2475,6 +2476,9 @@ int gk20a_vm_map_buffer(struct gk20a_as_share *as_share,
 
 	/* get ref to the mem handle (released on unmap_locked) */
 	dmabuf = dma_buf_get(dmabuf_fd);
+	if (IS_ERR(dmabuf))
+		return PTR_ERR(dmabuf);
+
 	if (!dmabuf)
 		return 0;
 
