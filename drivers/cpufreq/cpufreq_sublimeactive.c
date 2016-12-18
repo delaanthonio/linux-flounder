@@ -106,14 +106,6 @@ static void sa_dbs_timer(struct work_struct *work)
 static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 		void *data)
 {
-	struct cpufreq_freqs *freq = data;
-	struct sa_cpu_dbs_info_s *dbs_info =
-					&per_cpu(sa_cpu_dbs_info, freq->cpu);
-	struct cpufreq_policy *policy;
-
-	if (dbs_info->enable)
-		policy = dbs_info->cdbs.cur_policy;
-
 	return 0;
 }
 
