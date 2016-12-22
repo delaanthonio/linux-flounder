@@ -4588,30 +4588,28 @@ static void tegra_dsi_config_phy_clk(struct tegra_dc_dsi_data *dsi,
 	}
 }
 
-static int tegra_dsi_te_on_off(struct tegra_dc_dsi_data *dsi, bool flag)
+static int tegra_dsi_te_on(struct tegra_dc_dsi_data *dsi)
 {
-	int ret;
-
 	struct tegra_dsi_cmd te_enable[] = {
 		DSI_CMD_SHORT(DSI_DCS_WRITE_0_PARAM,
 				DSI_DCS_SET_TEARING_EFFECT_ON, 0x0),
 		DSI_DLY_MS(0),
 	};
 
+	return tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_enable,
+					ARRAY_SIZE(te_enable));
+}
+
+static int tegra_dsi_te_off(struct tegra_dc_dsi_data *dsi)
+{
 	struct tegra_dsi_cmd te_disable[] = {
 		DSI_CMD_SHORT(DSI_DCS_WRITE_0_PARAM,
 				DSI_DCS_SET_TEARING_EFFECT_OFF, 0x0),
 		DSI_DLY_MS(0),
 	};
 
-	if (flag)
-		ret = tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_enable,
-					ARRAY_SIZE(te_enable));
-	else
-		ret = tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_disable,
+	return tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_disable,
 					ARRAY_SIZE(te_disable));
-
-	return ret;
 }
 
 static int _tegra_dsi_host_suspend(struct tegra_dc *dc,
@@ -4782,7 +4780,12 @@ static int tegra_dsi_host_suspend(struct tegra_dc *dc)
 
 	tegra_dsi_stop_dc_stream(dc, dsi);
 
-	tegra_dsi_te_on_off(dsi, false);
+	err = tegra_dsi_te_off(dsi);
+	if (err < 0) {
+		dev_err(&dc->ndev->dev,
+			"TE off failed\n");
+		goto fail;
+	}
 
 	err = _tegra_dsi_host_suspend(dc, dsi, dsi->info.suspend_aggr);
 	if (err < 0) {
@@ -4923,7 +4926,12 @@ static int tegra_dsi_host_resume(struct tegra_dc *dc)
 		goto fail;
 	}
 
-	tegra_dsi_te_on_off(dsi, true);
+	err = tegra_dsi_te_on(dsi);
+	if (err < 0) {
+		dev_err(&dc->ndev->dev,
+			"TE on failed\n");
+		goto fail;
+	}
 
 	tegra_dsi_start_dc_stream(dc, dsi);
 	dsi->host_suspended = false;
