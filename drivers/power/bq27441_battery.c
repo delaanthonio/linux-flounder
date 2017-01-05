@@ -237,7 +237,7 @@ static void bq27441_work(struct work_struct *work)
 		power_supply_changed(&chip->battery);
 	}
 
-	schedule_delayed_work(&chip->work, BQ27441_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, BQ27441_DELAY);
 }
 
 static int bq27441_initialize(struct bq27441_chip *chip)
@@ -761,7 +761,7 @@ static int bq27441_probe(struct i2c_client *client,
 		dev_err(&client->dev, "chip init failed - %d\n", ret);
 
 	INIT_DEFERRABLE_WORK(&chip->work, bq27441_work);
-	schedule_delayed_work(&chip->work, 0);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, 0);
 
 	battery_gauge_record_snapshot_values(chip->bg_dev,
 				jiffies_to_msecs(BATTERY_SNAPSHOT_INTERVAL));
@@ -809,7 +809,7 @@ static int bq27441_suspend(struct device *dev)
 static int bq27441_resume(struct device *dev)
 {
 	struct bq27441_chip *chip = dev_get_drvdata(dev);
-	schedule_delayed_work(&chip->work, BQ27441_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, BQ27441_DELAY);
 	return 0;
 }
 #endif /* CONFIG_PM */

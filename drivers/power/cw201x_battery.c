@@ -433,7 +433,7 @@ static void cw201x_work(struct work_struct *work)
 		power_supply_changed(&chip->battery);
 	}
 
-	schedule_delayed_work(&chip->work, CW201x_WORK_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, CW201x_WORK_DELAY);
 }
 
 static int cw2015_get_property(struct power_supply *psy,
@@ -699,7 +699,7 @@ static int cw201x_probe(struct i2c_client *client,
 	}
 
 	INIT_DEFERRABLE_WORK(&chip->work, cw201x_work);
-	schedule_delayed_work(&chip->work, 0);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, 0);
 
 	if (client->irq) {
 		ret = request_threaded_irq(client->irq, NULL,
@@ -788,7 +788,7 @@ static int cw201x_resume(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct cw201x_chip *chip = i2c_get_clientdata(client);
 
-	schedule_delayed_work(&chip->work, CW201x_WORK_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, CW201x_WORK_DELAY);
 	if (device_may_wakeup(&chip->client->dev))
 		disable_irq_wake(chip->client->irq);
 	return 0;
