@@ -923,7 +923,7 @@ int tegra_dc_update_windows(struct tegra_dc_win *windows[], int n,
 	}
 
 	if (dc->out->flags & TEGRA_DC_OUT_ONE_SHOT_MODE) {
-		schedule_delayed_work(&dc->one_shot_work,
+		queue_delayed_work(system_power_efficient_wq, &dc->one_shot_work,
 				msecs_to_jiffies(dc->one_shot_delay_ms));
 	}
 	dc->crc_pending = true;

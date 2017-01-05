@@ -791,7 +791,7 @@ static int nvhost_pod_estimate_freq(struct devfreq *df,
 	} else {
 		/* Launch a work to slowdown the gpu */
 		*freq = scaling_state_check(df, now);
-		schedule_delayed_work(&podgov->idle_timer,
+		queue_delayed_work(system_power_efficient_wq, &podgov->idle_timer,
 			msecs_to_jiffies(podgov->p_slowdown_delay));
 	}
 

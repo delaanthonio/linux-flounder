@@ -2071,7 +2071,7 @@ static irqreturn_t tegra_dc_irq(int irq, void *ptr)
 	/* Check underflow */
 	if (underflow_mask) {
 		dc->underflow_mask |= underflow_mask;
-		schedule_delayed_work(&dc->underflow_work,
+		queue_delayed_work(system_power_efficient_wq, &dc->underflow_work,
 			msecs_to_jiffies(1));
 	}
 

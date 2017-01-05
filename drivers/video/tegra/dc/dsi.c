@@ -3158,7 +3158,7 @@ static void tegra_dc_dsi_release_host(struct tegra_dc *dc)
 
 		if (!atomic_read(&dsi->host_ref) &&
 		    (dsi->status.dc_stream == DSI_DC_STREAM_ENABLE))
-			schedule_delayed_work(&dsi->idle_work, dsi->idle_delay);
+			queue_delayed_work(system_power_efficient_wq, &dsi->idle_work, dsi->idle_delay);
 	}
 }
 
