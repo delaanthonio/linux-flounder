@@ -24,6 +24,7 @@
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/workqueue.h>
+#include <linux/display_state.h>
 #include <linux/moduleparam.h>
 #include <linux/export.h>
 #include <linux/debugfs.h>
@@ -3157,7 +3158,7 @@ static void tegra_dc_dsi_release_host(struct tegra_dc *dc)
 
 		if (!atomic_read(&dsi->host_ref) &&
 		    (dsi->status.dc_stream == DSI_DC_STREAM_ENABLE))
-			schedule_delayed_work(&dsi->idle_work, dsi->idle_delay);
+			queue_delayed_work(system_power_efficient_wq, &dsi->idle_work, dsi->idle_delay);
 	}
 }
 
@@ -4041,6 +4042,16 @@ static void tegra_dsi_setup_initialized_panel(struct tegra_dc_dsi_data *dsi)
 	dsi->enabled = true;
 }
 
+static BLOCKING_NOTIFIER_HEAD(display_notifier_list);
+
+ void display_state_register_notifier(struct notifier_block *nb) {
+	 blocking_notifier_chain_register(&display_notifier_list, nb);
+ }
+
+  void display_state_unregister_notifier(struct notifier_block *nb) {
+	  blocking_notifier_chain_unregister(&display_notifier_list, nb);
+  }
+
 static void tegra_dc_dsi_enable(struct tegra_dc *dc)
 {
 	struct tegra_dc_dsi_data *dsi = tegra_dc_get_outdata(dc);
@@ -4141,6 +4152,13 @@ static void tegra_dc_dsi_enable(struct tegra_dc *dc)
 
 	if (dsi->out_ops && dsi->out_ops->enable)
 		dsi->out_ops->enable(dsi);
+
+#ifdef CONFIG_TEGRA_DSI_DEBUG
+	dev_printk(KERN_DEBUG, &dc->ndev->dev, "Turning on display\n");
+#endif
+
+	blocking_notifier_call_chain(&display_notifier_list, DISPLAY_ON, NULL);
+
 fail:
 	tegra_dc_io_end(dc);
 	mutex_unlock(&dsi->lock);
@@ -4570,30 +4588,28 @@ static void tegra_dsi_config_phy_clk(struct tegra_dc_dsi_data *dsi,
 	}
 }
 
-static int tegra_dsi_te_on_off(struct tegra_dc_dsi_data *dsi, bool flag)
+static int tegra_dsi_te_on(struct tegra_dc_dsi_data *dsi)
 {
-	int ret;
-
 	struct tegra_dsi_cmd te_enable[] = {
 		DSI_CMD_SHORT(DSI_DCS_WRITE_0_PARAM,
 				DSI_DCS_SET_TEARING_EFFECT_ON, 0x0),
 		DSI_DLY_MS(0),
 	};
 
+	return tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_enable,
+					ARRAY_SIZE(te_enable));
+}
+
+static int tegra_dsi_te_off(struct tegra_dc_dsi_data *dsi)
+{
 	struct tegra_dsi_cmd te_disable[] = {
 		DSI_CMD_SHORT(DSI_DCS_WRITE_0_PARAM,
 				DSI_DCS_SET_TEARING_EFFECT_OFF, 0x0),
 		DSI_DLY_MS(0),
 	};
 
-	if (flag)
-		ret = tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_enable,
-					ARRAY_SIZE(te_enable));
-	else
-		ret = tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_disable,
+	return tegra_dsi_send_panel_cmd(dsi->dc, dsi, te_disable,
 					ARRAY_SIZE(te_disable));
-
-	return ret;
 }
 
 static int _tegra_dsi_host_suspend(struct tegra_dc *dc,
@@ -4764,7 +4780,12 @@ static int tegra_dsi_host_suspend(struct tegra_dc *dc)
 
 	tegra_dsi_stop_dc_stream(dc, dsi);
 
-	tegra_dsi_te_on_off(dsi, false);
+	err = tegra_dsi_te_off(dsi);
+	if (err < 0) {
+		dev_err(&dc->ndev->dev,
+			"TE off failed\n");
+		goto fail;
+	}
 
 	err = _tegra_dsi_host_suspend(dc, dsi, dsi->info.suspend_aggr);
 	if (err < 0) {
@@ -4905,7 +4926,12 @@ static int tegra_dsi_host_resume(struct tegra_dc *dc)
 		goto fail;
 	}
 
-	tegra_dsi_te_on_off(dsi, true);
+	err = tegra_dsi_te_on(dsi);
+	if (err < 0) {
+		dev_err(&dc->ndev->dev,
+			"TE on failed\n");
+		goto fail;
+	}
 
 	tegra_dsi_start_dc_stream(dc, dsi);
 	dsi->host_suspended = false;
@@ -4958,6 +4984,11 @@ static void tegra_dc_dsi_disable(struct tegra_dc *dc)
 			}
 		}
 	}
+
+#ifdef CONFIG_TEGRA_DSI_DEBUG
+	dev_printk(KERN_DEBUG, &dc->ndev->dev, "Turning off display\n");
+#endif
+	blocking_notifier_call_chain(&display_notifier_list, DISPLAY_OFF, NULL);
 fail:
 	mutex_unlock(&dsi->lock);
 	tegra_dc_io_end(dc);

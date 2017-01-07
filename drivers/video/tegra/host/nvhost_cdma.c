@@ -143,7 +143,7 @@ static void cdma_start_timer_locked(struct nvhost_cdma *cdma,
 	cdma->timeout.timeout = job->timeout;
 	cdma->timeout.allow_dependency = true;
 
-	schedule_delayed_work(&cdma->timeout.wq,
+	queue_delayed_work(system_power_efficient_wq, &cdma->timeout.wq,
 			msecs_to_jiffies(job->timeout));
 }
 

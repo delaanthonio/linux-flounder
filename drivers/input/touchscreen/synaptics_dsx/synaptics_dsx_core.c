@@ -628,7 +628,7 @@ static ssize_t synaptics_rmi4_wake_gesture_store(struct device *dev,
 	}
 
 	if (rmi4_data->f11_wakeup_gesture || rmi4_data->f12_wakeup_gesture) {
-		if (rmi4_data->suspend) { 
+		if (rmi4_data->suspend) {
 			wakeup_gesture_changed = true;
 			wakeup_gesture_temp = input;
 		} else {
@@ -2965,7 +2965,9 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 		}
 	}
 
-	exp_data.workqueue = alloc_workqueue("dsx_exp_workqueue", WQ_HIGHPRI, 1);
+	exp_data.workqueue = alloc_ordered_workqueue("%s",
+						WQ_HIGHPRI | WQ_MEM_RECLAIM,
+						"dsx_exp_workqueue");
 	INIT_DELAYED_WORK(&exp_data.work, synaptics_rmi4_exp_fn_work);
 	exp_data.rmi4_data = rmi4_data;
 	exp_data.queue_work = true;
@@ -3359,7 +3361,7 @@ exit:
 		rmi4_data->enable_wakeup_gesture = wakeup_gesture_temp;
 		wakeup_gesture_changed = false;
 	}
-			
+
 	return;
 }
 

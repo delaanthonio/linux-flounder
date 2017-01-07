@@ -12,42 +12,48 @@
  * published by the Free Software Foundation.
  */
 
-#include <linux/cpufreq.h>
+#include <linux/display_state.h>
 #include <linux/init.h>
-#include <linux/kernel.h>
-#include <linux/kernel_stat.h>
-#include <linux/kobject.h>
-#include <linux/module.h>
-#include <linux/mutex.h>
-#include <linux/notifier.h>
-#include <linux/percpu-defs.h>
 #include <linux/slab.h>
-#include <linux/sysfs.h>
-#include <linux/types.h>
 #include <linux/touchboost.h>
 
 #include "cpufreq_governor.h"
 
 /* Sublime_active governor macros */
-#define DEF_FREQUENCY_UP_THRESHOLD           (75)
-#define DEF_FREQUENCY_DOWN_THRESHOLD         (30)
-#define MAXIMUM_LOAD                         (100)
-#define MINIMUM_LOAD                         (11)
-#define DEF_INPUT_EVENT_MIN_FREQUENCY        (1428000)
-#define DEF_INPUT_EVENT_DURATION             (50000)
-#define MAX_INPUT_EVENT_DURATION             (200000)
-#define MIN_FREQUENCY_DELTA                  (10000)
-#define MINIMUM_SAMPLING_RATE                (15000)
+#define DEF_FREQ_UP_THRESHOLD		(80)
+#define DEF_FREQ_DOWN_THRESHOLD		(40)
+#define DEF_TOUCHBOOST_MIN_FREQ		(1428000)
+#define DEF_TOUCHBOOST_DURATION		(500 * USEC_PER_MSEC)	// 500 ms
+#define MAX_TOUCHBOOST_DURATION		(2000 * USEC_PER_MSEC)	// 2 sec
+#define DISPLAY_ON_SAMPLING_RATE	(15 * USEC_PER_MSEC)	// 15 ms
+#define DISPLAY_OFF_SAMPLING_RATE	(500 * USEC_PER_MSEC)	// 500 ms
+#define IGNORE_NICE_LOAD_ON		(1)
+#define IGNORE_NICE_LOAD_OFF		(0)
+#define MAX_LOAD			(100)
+#define MIN_LOAD			(11)
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
+static void sa_def_check_cpu(int cpu, unsigned int load);
 
-/*
- * Every sampling_rate, if current idle time is less than 30% (default),
- * try to increase the frequency. Every sampling_rate if the current idle
- * time is more than 70% (default), try to decrease the frequency.
- */
+static void (*__sa_check_cpu)(int cpu, unsigned int load) = sa_def_check_cpu;
+
 static void sa_check_cpu(int cpu, unsigned int load)
+{
+	__sa_check_cpu(cpu, load);
+}
+
+/**
+ * This function is designed for efficient frequency scaling at low sampling rates.
+ * For example, if the current busy time exceeds 80% (default), the current frequency
+ * will be averaged with the max frequency instead of shooting to the max frequency
+ * right away. This helps to make the governor responsive without excessive power use.
+ * Likewise if the current busy time is less than 40% (default), the current frequency
+ * will be averaged with the minimum frequency.
+ * @ cpu the cpu whose frequency should be set.
+ * @ load an int between 0 and 100 that represents how busy the cpu is.
+ */
+static void sa_def_check_cpu(int cpu, unsigned int load)
 {
 	struct sa_cpu_dbs_info_s const *dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
@@ -55,30 +61,47 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	const struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
 	const unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
-	const bool input_event = input_event_boost(sa_tuners->input_event_duration);
 
 	/* Check for frequency decrease */
 	if (load < sa_tuners->down_threshold) {
-
-		if (input_event)
-			freq_target = sa_tuners->input_event_min_freq;
-
-		else
+		if (touchboost_is_enabled(sa_tuners->touchboost_dur)) {
+			freq_target = sa_tuners->touchboost_min_freq;
+			__cpufreq_driver_target(policy, freq_target,
+						CPUFREQ_RELATION_H);
+		} else {
 			freq_target = (policy->cur + policy->min) / 2;
+			__cpufreq_driver_target(policy, freq_target,
+						CPUFREQ_RELATION_H);
+		}
 
-		__cpufreq_driver_target(policy, freq_target,
-					CPUFREQ_RELATION_L);
 	}
 
 	/* Check for frequency increase */
 	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
-
 		freq_target = (policy->max + policy->cur) / 2;
-
 		__cpufreq_driver_target(policy, freq_target,
-					 CPUFREQ_RELATION_H);
+					 CPUFREQ_RELATION_L);
 	}
 
+}
+
+/**
+ * Scale the cpu freq proportional to the load. This is used when the display is off
+ * Due to the interval between cpu samples being increased. There will not be as
+ * many spikes in the load that occurs when the sampling inverval is lower.
+ * @ cpu the cpu whose frequency should be set.
+ * @ load an int between 0 and 100 that represents how busy the cpu is.
+ */
+
+
+static void sa_display_off_check_cpu(int cpu, unsigned int load)
+{
+	struct sa_cpu_dbs_info_s const *dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
+	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
+	unsigned int freq_target = policy->min;
+	freq_target += (policy->max - policy->min) * load / MAX_LOAD;
+	__cpufreq_driver_target(policy, freq_target,
+				CPUFREQ_RELATION_H);
 }
 
 static void sa_dbs_timer(struct work_struct *work)
@@ -103,29 +126,61 @@ static void sa_dbs_timer(struct work_struct *work)
 	mutex_unlock(&core_dbs_info->cdbs.timer_mutex);
 }
 
-static int dbs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
+/**
+ * Set the sampling rate based on the state of the display.
+ * The sampling rate is lowered when the display is off and increased when
+ * the display is on.
+ */
+static int display_notifier(struct notifier_block *nb, unsigned long display_state,
 		void *data)
 {
-	return 0;
+	unsigned int sampling_rate;
+	unsigned int ignore_nice_load;
+	unsigned int cpu;
+
+	switch (display_state) {
+		case DISPLAY_ON:
+			__sa_check_cpu = sa_def_check_cpu;
+			sampling_rate = DISPLAY_ON_SAMPLING_RATE;
+			ignore_nice_load = IGNORE_NICE_LOAD_OFF;
+			break;
+
+		case DISPLAY_OFF:
+			__sa_check_cpu = sa_display_off_check_cpu;
+			sampling_rate = DISPLAY_OFF_SAMPLING_RATE;
+			ignore_nice_load = IGNORE_NICE_LOAD_ON;
+			break;
+
+		default:
+			sampling_rate = DISPLAY_ON_SAMPLING_RATE;
+			ignore_nice_load = IGNORE_NICE_LOAD_OFF;
+
+#ifdef CONFIG_TEGRA_DSI_DEBUG
+			printk(KERN_WARN "Invalid display state: %u\n", display_state);
+#endif
+	}
+
+#ifdef CONFIG_TEGRA_DSI_DEBUG
+	printk(KERN_INFO "Sampling rate set to %u\n", sampling_rate);
+#endif
+
+	for_each_possible_cpu(cpu) {
+		struct sa_cpu_dbs_info_s* const dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
+		struct cpufreq_policy* const policy = dbs_info->cdbs.cur_policy;
+		struct dbs_data* const dbs_data = policy->governor_data;
+		struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
+		sa_tuners->sampling_rate = sampling_rate;
+		sa_tuners->ignore_nice_load = ignore_nice_load;
+    	}
+	return NOTIFY_OK;
 }
+
+static struct notifier_block display_nb = {
+	 .notifier_call = display_notifier,
+};
 
 /************************** sysfs interface ************************/
 static struct common_dbs_data sa_dbs_cdata;
-
-static ssize_t store_sampling_rate(struct dbs_data *dbs_data, const char *buf,
-		size_t count)
-{
-	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
-	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
-
-	if (ret != 1)
-		return -EINVAL;
-
-	sa_tuners->sampling_rate = max(input, dbs_data->min_sampling_rate);
-	return count;
-}
 
 static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 		size_t count)
@@ -135,7 +190,7 @@ static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > MAXIMUM_LOAD ||
+	if (ret != 1 || input > MAX_LOAD ||
                 input <= sa_tuners->down_threshold)
 		return -EINVAL;
 
@@ -151,7 +206,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input < MINIMUM_LOAD ||
+	if (ret != 1 || input < MIN_LOAD ||
                 input >= sa_tuners->up_threshold)
 		return -EINVAL;
 
@@ -159,7 +214,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	return count;
 }
 
-static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
+static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
 	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
@@ -172,10 +227,7 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 	if (ret != 1)
 		return -EINVAL;
 
-        /* The input should be at most the lowest maximum frequency set among
-         * all CPUs and at least the greatest minimum frequency of all CPUs
-         */
-	for_each_online_cpu(cpu) {
+	for_each_possible_cpu(cpu) {
 		struct sa_cpu_dbs_info_s* const dbs_info = &per_cpu(sa_cpu_dbs_info, cpu);
 		const struct cpufreq_policy* const policy = dbs_info->cdbs.cur_policy;
 
@@ -184,13 +236,13 @@ static ssize_t store_input_event_min_freq(struct dbs_data *dbs_data,
 
 		else if (input > policy->max)
 			input  = policy->max;
-        }
+	}
 
-        sa_tuners->input_event_min_freq = input;
+        sa_tuners->touchboost_min_freq = input;
 	return count;
 }
 
-static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
+static ssize_t store_touchboost_dur(struct dbs_data *dbs_data,
 					  const char *buf, size_t count)
 {
 	struct sa_dbs_tuners* const sa_tuners = dbs_data->tuners;
@@ -199,34 +251,31 @@ static ssize_t store_input_event_duration(struct dbs_data *dbs_data,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > MAX_INPUT_EVENT_DURATION)
+	if (ret != 1 || input > MAX_TOUCHBOOST_DURATION)
 		return -EINVAL;
 
-	sa_tuners->input_event_duration = input;
+	sa_tuners->touchboost_dur = input;
 	return count;
 }
 
-show_store_one(sa, sampling_rate);
+show_one(sa, sampling_rate);
 show_store_one(sa, up_threshold);
 show_store_one(sa, down_threshold);
-show_store_one(sa, input_event_min_freq);
-show_store_one(sa, input_event_duration);
-declare_show_sampling_rate_min(sa);
+show_store_one(sa, touchboost_min_freq);
+show_store_one(sa, touchboost_dur);
 
-gov_sys_pol_attr_rw(sampling_rate);
+gov_sys_pol_attr_ro(sampling_rate);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
-gov_sys_pol_attr_rw(input_event_min_freq);
-gov_sys_pol_attr_rw(input_event_duration);
-gov_sys_pol_attr_ro(sampling_rate_min);
+gov_sys_pol_attr_rw(touchboost_min_freq);
+gov_sys_pol_attr_rw(touchboost_dur);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
 	&sampling_rate_gov_sys.attr,
-	&sampling_rate_min_gov_sys.attr,
 	&up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr,
-	&input_event_min_freq_gov_sys.attr,
-	&input_event_duration_gov_sys.attr,
+	&touchboost_min_freq_gov_sys.attr,
+	&touchboost_dur_gov_sys.attr,
 	NULL
 };
 
@@ -236,12 +285,11 @@ static struct attribute_group sa_attr_group_gov_sys = {
 };
 
 static struct attribute *dbs_attributes_gov_pol[] = {
-	&sampling_rate_min_gov_pol.attr,
 	&sampling_rate_gov_pol.attr,
 	&up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr,
-	&input_event_min_freq_gov_pol.attr,
-	&input_event_duration_gov_pol.attr,
+	&touchboost_min_freq_gov_pol.attr,
+	&touchboost_dur_gov_pol.attr,
 	NULL
 };
 
@@ -261,31 +309,26 @@ static int sa_init(struct dbs_data *dbs_data)
 		pr_err("%s: kzalloc failed\n", __func__);
 		return -ENOMEM;
 	}
-	tuners->up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
-	tuners->down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD;
-	tuners->input_event_min_freq = DEF_INPUT_EVENT_MIN_FREQUENCY;
-	tuners->input_event_duration = DEF_INPUT_EVENT_DURATION;
+	tuners->up_threshold = DEF_FREQ_UP_THRESHOLD;
+	tuners->down_threshold = DEF_FREQ_DOWN_THRESHOLD;
+	tuners->touchboost_min_freq = DEF_TOUCHBOOST_MIN_FREQ;
+	tuners->touchboost_dur = DEF_TOUCHBOOST_DURATION;
+	tuners->ignore_nice_load = IGNORE_NICE_LOAD_OFF;
 
 	dbs_data->tuners = tuners;
-	dbs_data->min_sampling_rate = MINIMUM_SAMPLING_RATE;
+	dbs_data->min_sampling_rate = DISPLAY_ON_SAMPLING_RATE;
 	mutex_init(&dbs_data->mutex);
+	display_state_register_notifier(&display_nb);
 	return 0;
 }
 
 static void sa_exit(struct dbs_data *dbs_data)
 {
+	display_state_unregister_notifier(&display_nb);
 	kfree(dbs_data->tuners);
 }
 
 define_get_cpu_dbs_routines(sa_cpu_dbs_info);
-
-static struct notifier_block sa_cpufreq_notifier_block = {
-	.notifier_call = dbs_cpufreq_notifier,
-};
-
-static struct sa_ops sa_ops = {
-	.notifier_block = &sa_cpufreq_notifier_block,
-};
 
 static struct common_dbs_data sa_dbs_cdata = {
 	.governor = GOV_SUBLIMEACTIVE,
@@ -295,7 +338,7 @@ static struct common_dbs_data sa_dbs_cdata = {
 	.get_cpu_dbs_info_s = get_cpu_dbs_info_s,
 	.gov_dbs_timer = sa_dbs_timer,
 	.gov_check_cpu = sa_check_cpu,
-	.gov_ops = &sa_ops,
+	.gov_ops = NULL,
 	.init = sa_init,
 	.exit = sa_exit,
 };

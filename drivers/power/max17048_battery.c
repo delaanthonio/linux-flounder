@@ -292,7 +292,7 @@ static void max17048_work(struct work_struct *work)
 		power_supply_changed(&chip->battery);
 	}
 
-	schedule_delayed_work(&chip->work, MAX17048_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, MAX17048_DELAY);
 }
 
 void max17048_battery_status(int status)
@@ -792,7 +792,7 @@ static int max17048_probe(struct i2c_client *client,
 	}
 
 	INIT_DEFERRABLE_WORK(&chip->work, max17048_work);
-	schedule_delayed_work(&chip->work, 0);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, 0);
 
 	battery_gauge_record_snapshot_values(chip->bg_dev,
 					jiffies_to_msecs
@@ -896,7 +896,7 @@ static int max17048_resume(struct device *dev)
 		return ret;
 	}
 
-	schedule_delayed_work(&chip->work, MAX17048_DELAY);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, MAX17048_DELAY);
 	if (device_may_wakeup(&chip->client->dev))
 		disable_irq_wake(chip->client->irq);
 

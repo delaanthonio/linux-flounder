@@ -405,7 +405,7 @@ static inline void htc_battery_bq2419x_aicl_wakelock(
 	}
 }
 
-static void htc_battery_bq2419x_aicl_wq(struct work_struct *work)
+static void htc_battery_bq2419x_aicl_work(struct work_struct *work)
 {
 	struct htc_battery_bq2419x_data *data;
 	int ret;
@@ -511,7 +511,7 @@ static void htc_battery_bq2419x_aicl_wq(struct work_struct *work)
 
 		data->aicl_current_phase = current_phase;
 		data->aicl_input_current = current_input_current;
-		schedule_delayed_work(&data->aicl_wq,
+		queue_delayed_work(system_power_efficient_wq, &data->aicl_wq,
 					msecs_to_jiffies(AICL_STEP_DELAY_MS));
 	} else {
 		if (data->aicl_disable_after_detect) {
@@ -559,7 +559,7 @@ static void htc_battery_bq2419x_aicl_wq(struct work_struct *work)
 					current_phase = AICL_NOT_MATCH;
 					current_input_current =
 						AICL_INPUT_CURRENT_MIN_MA;
-					schedule_delayed_work(&data->aicl_wq,
+					queue_delayed_work(system_power_efficient_wq, &data->aicl_wq,
 						msecs_to_jiffies(
 							AICL_STEP_RETRY_MS));
 				}
@@ -672,7 +672,7 @@ static int htc_battery_bq2419x_aicl_configure_current(
 			data->aicl_current_phase = AICL_DETECT_INIT;
 			data->aicl_input_current = AICL_INPUT_CURRENT_INIT_MA;
 			cancel_delayed_work_sync(&data->aicl_wq);
-			schedule_delayed_work(&data->aicl_wq, 0);
+			queue_delayed_work(system_power_efficient_wq, &data->aicl_wq, 0);
 		} else {
 			data->aicl_input_current = target_input;
 			data->aicl_current_phase = AICL_MATCH;
@@ -1684,7 +1684,7 @@ static int htc_battery_bq2419x_probe(struct platform_device *pdev)
 						"charge-change-lock");
 	wake_lock_init(&data->aicl_wake_lock, WAKE_LOCK_SUSPEND,
 						"charge-aicl-lock");
-	INIT_DELAYED_WORK(&data->aicl_wq, htc_battery_bq2419x_aicl_wq);
+	INIT_DELAYED_WORK(&data->aicl_wq, htc_battery_bq2419x_aicl_work);
 
 	dev_set_drvdata(&pdev->dev, data);
 

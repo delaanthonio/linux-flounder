@@ -452,7 +452,8 @@ int dev_pm_qos_update_request_timeout(struct dev_pm_qos_request *req,
 		cancel_delayed_work_sync(&req->work);
 
 	dev_pm_qos_update_request(req, new_value);
-	schedule_delayed_work(&req->work, usecs_to_jiffies(timeout_us));
+	queue_delayed_work(system_power_efficient_wq,&req->work,
+				usecs_to_jiffies(timeout_us));
 
 	return 0;
 }

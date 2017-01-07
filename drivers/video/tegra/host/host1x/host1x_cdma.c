@@ -484,7 +484,7 @@ static void cdma_timeout_handler(struct work_struct *work)
 
 	ret = mutex_trylock(&cdma->lock);
 	if (!ret) {
-		schedule_delayed_work(&cdma->timeout.wq, msecs_to_jiffies(10));
+		queue_delayed_work(system_power_efficient_wq, &cdma->timeout.wq, msecs_to_jiffies(10));
 		mutex_unlock(&dev->timeout_mutex);
 		return;
 	}
@@ -504,7 +504,7 @@ static void cdma_timeout_handler(struct work_struct *work)
 		dev_dbg(&dev->dev->dev,
 			"cdma_timeout: timeout handler rescheduled\n");
 		cdma->timeout.allow_dependency = false;
-		schedule_delayed_work(&cdma->timeout.wq,
+		queue_delayed_work(system_power_efficient_wq, &cdma->timeout.wq,
 				      msecs_to_jiffies(cdma->timeout.timeout));
 		mutex_unlock(&cdma->lock);
 		mutex_unlock(&dev->timeout_mutex);

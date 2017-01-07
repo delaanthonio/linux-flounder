@@ -106,7 +106,7 @@ static struct wake_lock dt2w_wakelock;
 static void report_gesture(int gest)
 {
 	pwrtrigger_time[1] = pwrtrigger_time[0];
-	pwrtrigger_time[0] = jiffies;	
+	pwrtrigger_time[0] = jiffies;
 
 	if (pwrtrigger_time[0] - pwrtrigger_time[1] < TRIGGER_TIMEOUT)
 		return;
@@ -138,7 +138,7 @@ static DECLARE_WORK(wake_presspwr_work, wake_presspwr);
 static void wake_pwrtrigger(void) {
 	pwrtrigger_time[1] = pwrtrigger_time[0];
 	pwrtrigger_time[0] = jiffies;
-	
+
 	if (pwrtrigger_time[0] - pwrtrigger_time[1] < TRIGGER_TIMEOUT)
 		return;
 
@@ -282,8 +282,8 @@ static void detect_sweep2wake_v(int x, int y, bool st, bool scr_suspended)
 #endif
 								wake_pwrtrigger();
 #if (WAKE_GESTURES_ENABLED)
-							}		
-#endif								
+							}
+#endif
 							exec_county = false;
 						}
 					}
@@ -314,7 +314,7 @@ static void detect_sweep2wake_v(int x, int y, bool st, bool scr_suspended)
 #endif
 								wake_pwrtrigger();
 #if (WAKE_GESTURES_ENABLED)
-							}								
+							}
 #endif
 							exec_county = false;
 						}
@@ -323,7 +323,7 @@ static void detect_sweep2wake_v(int x, int y, bool st, bool scr_suspended)
 			}
 		}
 	}
-	
+
 }
 
 static void detect_sweep2wake_h(int x, int y, bool st, bool scr_suspended)
@@ -367,7 +367,7 @@ static void detect_sweep2wake_h(int x, int y, bool st, bool scr_suspended)
 								wake_pwrtrigger();
 #if (WAKE_GESTURES_ENABLED)
 							}
-#endif							
+#endif
 							exec_countx = false;
 						}
 					}
@@ -400,8 +400,8 @@ static void detect_sweep2wake_h(int x, int y, bool st, bool scr_suspended)
 #endif
 								wake_pwrtrigger();
 #if (WAKE_GESTURES_ENABLED)
-							}		
-#endif							
+							}
+#endif
 							exec_countx = false;
 						}
 					}
@@ -553,7 +553,7 @@ static ssize_t sweep2wake_dump(struct device *dev,
 	sscanf(buf, "%d ", &s2w_switch_temp);
 	if (s2w_switch_temp < 0 || s2w_switch_temp > 15)
 		s2w_switch_temp = 0;
-		
+
 	if (s2w_switch_temp == 0)
 		set_internal_dt(dt2w_switch);
 	else {
@@ -562,8 +562,8 @@ static ssize_t sweep2wake_dump(struct device *dev,
 
 	if (!scr_suspended())
 		s2w_switch = s2w_switch_temp;
-		
-		
+
+
 	return count;
 }
 
@@ -583,8 +583,8 @@ static ssize_t sweep2sleep_dump(struct device *dev,
 {
 	sscanf(buf, "%d ", &s2s_switch);
 	if (s2s_switch < 0 || s2s_switch > 3)
-		s2s_switch = 0;				
-				
+		s2s_switch = 0;
+
 	return count;
 }
 
@@ -608,10 +608,10 @@ static ssize_t doubletap2wake_dump(struct device *dev,
 	int input;
 	sscanf(buf, "%d ", &input);
 	if (input < 0 || input > 1)
-		input = 0;	
+		input = 0;
 
-	dt2w_switch = (input) ? true : false;		
-	
+	dt2w_switch = (input) ? true : false;
+
 	if (s2w_switch == 0 || s2w_switch_temp == 0)
 		set_internal_dt(dt2w_switch);
 
@@ -620,7 +620,7 @@ static ssize_t doubletap2wake_dump(struct device *dev,
 
 static DEVICE_ATTR(doubletap2wake, (S_IWUSR|S_IRUGO),
 	doubletap2wake_show, doubletap2wake_dump);
-	
+
 #if (WAKE_GESTURES_ENABLED)
 static ssize_t wake_gestures_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -634,13 +634,13 @@ static ssize_t wake_gestures_dump(struct device *dev,
 {
 	sscanf(buf, "%d ", &gestures_switch);
 	if (gestures_switch < 0 || gestures_switch > 1)
-		gestures_switch = 0;	
+		gestures_switch = 0;
 	return count;
 }
 
 static DEVICE_ATTR(wake_gestures, (S_IWUSR|S_IRUGO),
 	wake_gestures_show, wake_gestures_dump);
-#endif	
+#endif
 
 
 /*
@@ -680,25 +680,25 @@ static int __init wake_gestures_init(void)
 		return -EFAULT;
 	}
 	INIT_WORK(&s2w_input_work, s2w_input_callback);
-		
+
 	dt2w_input_wq = create_workqueue("dt2wiwq");
 	if (!dt2w_input_wq) {
 		pr_err("%s: Failed to create dt2wiwq workqueue\n", __func__);
 		return -EFAULT;
 	}
 	INIT_WORK(&dt2w_input_work, dt2w_input_callback);
-		
+
 	wake_lock_init(&dt2w_wakelock, WAKE_LOCK_SUSPEND, "dt2w_wakelock");
-		
+
 	dt2w_switch = get_internal_dt();
-		
+
 #if (WAKE_GESTURES_ENABLED)
 	gesture_dev = input_allocate_device();
 	if (!gesture_dev) {
 		pr_err("Can't allocate gesture device\n");
 		goto err_alloc_dev;
 	}
-	
+
 	gesture_dev->name = "wake_gesture";
 	gesture_dev->phys = "wake_gesture/input0";
 	input_set_capability(gesture_dev, EV_REL, WAKE_GESTURE);
@@ -735,7 +735,7 @@ static int __init wake_gestures_init(void)
 
 	return 0;
 
-#if (WAKE_GESTURES_ENABLED)	
+#if (WAKE_GESTURES_ENABLED)
 err_gesture_dev:
 	input_free_device(gesture_dev);
 #endif
@@ -757,7 +757,7 @@ static void __exit wake_gestures_exit(void)
 	input_unregister_device(wake_dev);
 	input_free_device(wake_dev);
 	wake_lock_destroy(&dt2w_wakelock);
-#if (WAKE_GESTURES_ENABLED)	
+#if (WAKE_GESTURES_ENABLED)
 	input_unregister_device(gesture_dev);
 	input_free_device(gesture_dev);
 #endif

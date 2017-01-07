@@ -53,14 +53,18 @@ void inner_flush_cache_all(void)
 #endif
 }
 
+extern void __clean_dcache_louis(void *);
+extern void v7_clean_kern_cache_louis(void *);
 void inner_clean_cache_all(void)
 {
 #if defined(CONFIG_ARM64) && \
 	defined(CONFIG_NVMAP_CACHE_MAINT_BY_SET_WAYS_ON_ONE_CPU)
+	on_each_cpu(__clean_dcache_louis, NULL, 1);
 	__clean_dcache_all(NULL);
 #elif defined(CONFIG_ARM64)
 	on_each_cpu(__clean_dcache_all, NULL, 1);
 #elif defined(CONFIG_NVMAP_CACHE_MAINT_BY_SET_WAYS_ON_ONE_CPU)
+	on_each_cpu(v7_clean_kern_cache_louis, NULL, 1);
 	v7_clean_kern_cache_all(NULL);
 #else
 	on_each_cpu(v7_clean_kern_cache_all, NULL, 1);
@@ -73,7 +77,7 @@ void inner_clean_cache_all(void)
  *   __clean_dcache_page() is only available on ARM64 (well, we haven't
  *   implemented it on ARMv7).
  */
-#ifdef ARM64
+#if defined(CONFIG_ARM64)
 void nvmap_clean_cache(struct page **pages, int numpages)
 {
 	int i;
@@ -89,6 +93,15 @@ void nvmap_clean_cache(struct page **pages, int numpages)
 		__clean_dcache_page(pages[i]);
 }
 #endif
+
+void nvmap_clean_cache_page(struct page *page)
+{
+#if defined(CONFIG_ARM64)
+	__clean_dcache_page(page);
+#else
+	__flush_dcache_page(page_mapping(page), page);
+#endif
+}
 
 void nvmap_flush_cache(struct page **pages, int numpages)
 {
@@ -242,6 +255,15 @@ int nvmap_reserve_pages(struct nvmap_handle **handles, u32 *offsets, u32 *sizes,
 			u32 nr, u32 op)
 {
 	int i;
+
+	// validates all page params first
+	for (i = 0; i < nr; i++) {
+		u32 size = sizes[i] ? sizes[i] : handles[i]->size;
+		u32 offset = sizes[i] ? offsets[i] : 0;
+
+		if ((offset != 0) || (size != handles[i]->size))
+			return -EINVAL;
+	}
 
 	for (i = 0; i < nr; i++) {
 		u32 size = sizes[i] ? sizes[i] : handles[i]->size;

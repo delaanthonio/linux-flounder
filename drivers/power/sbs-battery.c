@@ -587,7 +587,7 @@ static void sbs_external_power_changed(struct power_supply *psy)
 	/* cancel outstanding work */
 	cancel_delayed_work_sync(&chip->work);
 
-	schedule_delayed_work(&chip->work, HZ);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, HZ);
 	chip->poll_time = chip->plat_data.poll_retry_count;
 }
 
@@ -656,7 +656,7 @@ static void sbs_delayed_work(struct work_struct *work)
 	chip = container_of(work, struct sbs_info, work.work);
 
 	power_supply_changed(&chip->power_supply);
-	schedule_delayed_work(&chip->work, HZ*2);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, HZ*2);
 }
 
 #if defined(CONFIG_OF)
@@ -863,7 +863,7 @@ skip_gpio:
 		"%s: battery gas gauge device registered\n", client->name);
 
 	INIT_DEFERRABLE_WORK(&chip->work, sbs_delayed_work);
-	schedule_delayed_work(&chip->work, HZ);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, HZ);
 
 	battery_gauge_record_snapshot_values(chip->bg_dev,
 					jiffies_to_msecs(HZ/2));
@@ -953,7 +953,7 @@ static int sbs_resume(struct device *dev)
 	struct i2c_client *client = to_i2c_client(dev);
 	struct sbs_info *chip = i2c_get_clientdata(client);
 
-	schedule_delayed_work(&chip->work, HZ);
+	queue_delayed_work(system_power_efficient_wq, &chip->work, HZ);
 	return 0;
 }
 #endif

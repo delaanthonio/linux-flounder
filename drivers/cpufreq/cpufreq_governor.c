@@ -17,12 +17,8 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <asm/cputime.h>
-#include <linux/cpufreq.h>
-#include <linux/cpumask.h>
 #include <linux/export.h>
 #include <linux/kernel_stat.h>
-#include <linux/mutex.h>
 #include <linux/slab.h>
 #include <linux/tick.h>
 #include <linux/types.h>
@@ -105,7 +101,7 @@ void dbs_check_cpu(struct dbs_data *dbs_data, int cpu)
 		ignore_nice = ex_tuners->ignore_nice_load;
 	} else if (dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) {
 		sampling_rate = sa_tuners->sampling_rate;
-		ignore_nice = 0;
+		ignore_nice = sa_tuners->ignore_nice_load;
 	}  else {
 		sampling_rate = cs_tuners->sampling_rate;
 		ignore_nice = cs_tuners->ignore_nice_load;
@@ -358,12 +354,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 			cpufreq_register_notifier(cs_ops->notifier_block,
 					CPUFREQ_TRANSITION_NOTIFIER);
-		} else if ((cdata->governor == GOV_SUBLIMEACTIVE) &&
-				(!policy->governor->initialized)) {
-			struct sa_ops *sa_ops = dbs_data->cdata->gov_ops;
-
-			cpufreq_register_notifier(sa_ops->notifier_block,
-					CPUFREQ_TRANSITION_NOTIFIER);
 		}
 
 		if (!have_governor_per_policy())
@@ -380,12 +370,6 @@ int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				struct cs_ops *cs_ops = dbs_data->cdata->gov_ops;
 
 				cpufreq_unregister_notifier(cs_ops->notifier_block,
-						CPUFREQ_TRANSITION_NOTIFIER);
-			} else if ((dbs_data->cdata->governor == GOV_SUBLIMEACTIVE) &&
-				(policy->governor->initialized == 1)) {
-				struct sa_ops *sa_ops = dbs_data->cdata->gov_ops;
-
-				cpufreq_unregister_notifier(sa_ops->notifier_block,
 						CPUFREQ_TRANSITION_NOTIFIER);
 			}
 

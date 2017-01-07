@@ -18,10 +18,9 @@
 #define _CPUFREQ_GOVERNOR_H
 
 #include <linux/cpufreq.h>
-#include <linux/kobject.h>
+#include <linux/kernel_stat.h>
+#include <linux/module.h>
 #include <linux/mutex.h>
-#include <linux/workqueue.h>
-#include <linux/sysfs.h>
 
 /*
  * The polling frequency depends on the capability of the processor. Default
@@ -203,11 +202,12 @@ struct cs_dbs_tuners {
 };
 
 struct sa_dbs_tuners {
+	unsigned int ignore_nice_load;
 	unsigned int sampling_rate;
 	unsigned int up_threshold;
 	unsigned int down_threshold;
-	unsigned int input_event_min_freq;
-	unsigned int input_event_duration;
+	unsigned int touchboost_min_freq;
+	unsigned int touchboost_dur;
 };
 
 struct ex_dbs_tuners {
