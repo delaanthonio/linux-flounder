@@ -16,16 +16,16 @@
  *
  */
 
-#include <linux/kernel.h>
-#include <linux/cpuquiet.h>
-#include <linux/cpumask.h>
-#include <linux/module.h>
-#include <linux/cpufreq.h>
-#include <linux/pm_qos.h>
-#include <linux/jiffies.h>
-#include <linux/slab.h>
 #include <linux/cpu.h>
+#include <linux/cpufreq.h>
+#include <linux/cpumask.h>
+#include <linux/cpuquiet.h>
+#include <linux/jiffies.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/pm_qos.h>
 #include <linux/sched.h>
+#include <linux/slab.h>
 #include <linux/tick.h>
 #include <linux/touchboost.h>
 #include <asm/cputime.h>
@@ -112,9 +112,9 @@ static void start_load_timer(void)
 static void stop_load_timer(void)
 {
 	if (load_timer_active) {
-                load_timer_active = false;
-	        del_timer(&load_timer);
-        }
+		load_timer_active = false;
+		del_timer(&load_timer);
+	}
 }
 
 static unsigned int get_slowest_cpu(void)
@@ -169,9 +169,7 @@ static bool load_is_skewed(void)
 	unsigned long skewed_load = (highest_load + balance_level) / 4;
 
 	/*  skewed: freq targets for at least 2 CPUs are below 25% threshold */
-	if (count_slow_cpus(skewed_load) >= 1)
-		return true;
-        return false;
+	return count_slow_cpus(skewed_load) >= 1;
 }
 
 static void check_cpu_cores(struct work_struct *work)
@@ -182,56 +180,60 @@ static void check_cpu_cores(struct work_struct *work)
 		break;
 	case DISABLED:
 		if (load_is_skewed()) {
-                        cpu = get_slowest_cpu();
+			cpu = get_slowest_cpu();
 			if (cpu < nr_cpu_ids)
-                                cpuquiet_quiesence_cpu(cpu, false);
-                        stop_load_timer();
-                } else
-                        queue_delayed_work(touch_wq, &touch_work, down_delay);
+				cpuquiet_quiesence_cpu(cpu, false);
+			stop_load_timer();
+		} else
+			queue_delayed_work(touch_wq, &touch_work, down_delay);
 		break;
-        case ENABLED:
-                cpu = cpumask_next_zero(0, cpu_online_mask);
-			if (cpu < nr_cpu_ids)
-				cpuquiet_wake_cpu(cpu, false);
-                        stop_load_timer();
+	case ENABLED:
+		cpu = cpumask_next_zero(0, cpu_online_mask);
+		if (cpu < nr_cpu_ids)
+			cpuquiet_wake_cpu(cpu, false);
+		stop_load_timer();
 		break;
 	default:
 		pr_err("%s: invalid cpuquiet touch governor state %d\n",
 		       __func__, touchboost_state);
-        }
+	}
 }
 
 static int touch_cpufreq_transition(struct notifier_block *nb,
-	unsigned long state, void *unused)
+				    unsigned long state, void *unused)
 {
 	if (state == CPUFREQ_POSTCHANGE || state == CPUFREQ_RESUMECHANGE) {
-                switch (touchboost_state) {
-                case IDLE:
-                        if (touchboost_is_enabled(TOUCHBOOST_DURATION)) {
-                                touchboost_state = ENABLED;
-                                queue_delayed_work(touch_wq, &touch_work, up_delay);
-                        } else {
-                                touchboost_state = DISABLED;
-                                queue_delayed_work(touch_wq, &touch_work, down_delay);
-                        }
-                        break;
-                case DISABLED:
-                        if (touchboost_is_enabled(TOUCHBOOST_DURATION)) {
-                                touchboost_state = ENABLED;
-                                queue_delayed_work(touch_wq, &touch_work, up_delay);
-                        }
-                        break;
-                case ENABLED:
-                        if (!touchboost_is_enabled(TOUCHBOOST_DURATION)) {
-                                touchboost_state = DISABLED;
-                                queue_delayed_work(touch_wq, &touch_work, down_delay);
-                        }
-                        break;
-                default:
-                        pr_err("%s: invalid cpuquiet touch governor state %d\n",
-		       __func__, touchboost_state);
-                }
-                start_load_timer();
+		switch (touchboost_state) {
+		case IDLE:
+			if (touchboost_is_enabled(TOUCHBOOST_DURATION)) {
+				touchboost_state = ENABLED;
+				queue_delayed_work(touch_wq, &touch_work,
+						   up_delay);
+			} else {
+				touchboost_state = DISABLED;
+				queue_delayed_work(touch_wq, &touch_work,
+						   down_delay);
+			}
+			break;
+		case DISABLED:
+			if (touchboost_is_enabled(TOUCHBOOST_DURATION)) {
+				touchboost_state = ENABLED;
+				queue_delayed_work(touch_wq, &touch_work,
+						   up_delay);
+			}
+			break;
+		case ENABLED:
+			if (!touchboost_is_enabled(TOUCHBOOST_DURATION)) {
+				touchboost_state = DISABLED;
+				queue_delayed_work(touch_wq, &touch_work,
+						   down_delay);
+			}
+			break;
+		default:
+			pr_err("%s: invalid cpuquiet touch governor state %d\n",
+			       __func__, touchboost_state);
+		}
+		start_load_timer();
 	}
 	return NOTIFY_OK;
 }
@@ -245,8 +247,8 @@ static void delay_callback(struct cpuquiet_attribute *attr)
 	unsigned long val;
 
 	if (attr) {
-		val = (*((unsigned long *)(attr->param)));
-		(*((unsigned long *)(attr->param))) = msecs_to_jiffies(val);
+		val = (*((unsigned long *) (attr->param)));
+		(*((unsigned long *) (attr->param))) = msecs_to_jiffies(val);
 	}
 }
 
@@ -297,7 +299,7 @@ static void touch_stop(void)
 	   can't be modified by a cpufreq transition
 	*/
 	cpufreq_unregister_notifier(&touch_cpufreq_nb,
-		CPUFREQ_TRANSITION_NOTIFIER);
+				    CPUFREQ_TRANSITION_NOTIFIER);
 
 	/* now we can force the governor to be idle */
 	touchboost_state = IDLE;
@@ -316,8 +318,8 @@ static int touch_start(void)
 	if (err)
 		return err;
 
-	touch_wq = alloc_workqueue("cpuquiet-touch",
-					WQ_UNBOUND | WQ_FREEZABLE, 1);
+	touch_wq =
+		alloc_workqueue("cpuquiet-touch", WQ_UNBOUND | WQ_FREEZABLE, 1);
 	if (!touch_wq)
 		return -ENOMEM;
 
@@ -327,7 +329,7 @@ static int touch_start(void)
 	down_delay = msecs_to_jiffies(DEF_DOWN_DELAY);
 
 	cpufreq_register_notifier(&touch_cpufreq_nb,
-		CPUFREQ_TRANSITION_NOTIFIER);
+				  CPUFREQ_TRANSITION_NOTIFIER);
 
 	init_timer(&load_timer);
 	load_timer.function = calculate_load_timer;
