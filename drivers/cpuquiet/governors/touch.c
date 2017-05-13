@@ -31,8 +31,8 @@
 #include <asm/cputime.h>
 
 #define TOUCHBOOST_DURATION	(1000 * USEC_PER_MSEC)
-#define DEF_UP_DELAY		(0)
-#define DEF_DOWN_DELAY		(500)
+#define DEF_UP_DELAY		(50)
+#define DEF_DOWN_DELAY		(1000)
 #define DEF_BALANCE_LEVEL	(30)
 #define DEF_LOAD_SAMPLE_RATE	(20)
 
