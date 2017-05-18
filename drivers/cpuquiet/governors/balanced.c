@@ -64,7 +64,6 @@ static unsigned long up_delay;
 static unsigned long down_delay;
 static unsigned long last_change_time;
 static unsigned int  load_sample_rate = 20; /* msec */
-static struct workqueue_struct *balanced_wq;
 static struct delayed_work balanced_work;
 static BALANCED_STATE balanced_state;
 static struct kobject *balanced_kobject;
@@ -167,6 +166,18 @@ static unsigned int count_slow_cpus(unsigned int limit)
 	}
 
 	return cnt;
+}
+
+/**
+ * balanced_queue_delayed_work - queue balanced work on CPU 0
+ * @delay: number of jiffies to wait before queuing
+ *
+ * Returns %false if @work was already on a queue, %true otherwise.  If
+ * @delay is zero and @balanced_work is idle, it will be scheduled for immediate
+ * execution.
+ */
+static bool balanced_queue_delayed_work(int delay) {
+    return queue_delayed_work_on(0, system_freezable_wq, &balanced_work, delay);
 }
 
 #define NR_FSHIFT	2
@@ -301,8 +312,7 @@ static void balanced_work_func(struct work_struct *work)
 		cpu = get_slowest_cpu_n();
 		if (cpu < nr_cpu_ids) {
 			up = false;
-			queue_delayed_work(balanced_wq,
-						 &balanced_work, up_delay);
+            balanced_queue_delayed_work(up_delay);
 		} else
 			stop_load_timer();
 		break;
@@ -327,8 +337,7 @@ static void balanced_work_func(struct work_struct *work)
 		default:
 			break;
 		}
-		queue_delayed_work(
-			balanced_wq, &balanced_work, up_delay);
+		balanced_queue_delayed_work(up_delay);
 		break;
 	default:
 		pr_err("%s: invalid cpuquiet balanced governor state %d\n",
@@ -360,30 +369,25 @@ static int balanced_cpufreq_transition(struct notifier_block *nb,
 		case IDLE:
 			if (cpu_freq >= idle_top_freq) {
 				balanced_state = UP;
-				queue_delayed_work(
-					balanced_wq, &balanced_work, up_delay);
+				balanced_queue_delayed_work(up_delay);
 				start_load_timer();
 			} else if (cpu_freq <= idle_bottom_freq) {
 				balanced_state = DOWN;
-				queue_delayed_work(
-					balanced_wq, &balanced_work,
-					down_delay);
+                balanced_queue_delayed_work(down_delay);
 				start_load_timer();
 			}
 			break;
 		case DOWN:
 			if (cpu_freq >= idle_top_freq) {
 				balanced_state = UP;
-				queue_delayed_work(
-					balanced_wq, &balanced_work, up_delay);
+				balanced_queue_delayed_work(up_delay);
 				start_load_timer();
 			}
 			break;
 		case UP:
 			if (cpu_freq <= idle_bottom_freq) {
 				balanced_state = DOWN;
-				queue_delayed_work(balanced_wq,
-					&balanced_work, up_delay);
+				balanced_queue_delayed_work(down_delay);
 				start_load_timer();
 			}
 			break;
@@ -484,7 +488,6 @@ static void balanced_stop(void)
 	/* now we can force the governor to be idle */
 	balanced_state = IDLE;
 	cancel_delayed_work_sync(&balanced_work);
-	destroy_workqueue(balanced_wq);
 	del_timer(&load_timer);
 
 	kobject_put(balanced_kobject);
@@ -499,11 +502,6 @@ static int balanced_start(void)
 	err = balanced_sysfs();
 	if (err)
 		return err;
-
-	balanced_wq = alloc_workqueue("cpuquiet-balanced",
-			WQ_UNBOUND | WQ_FREEZABLE, 1);
-	if (!balanced_wq)
-		return -ENOMEM;
 
 	INIT_DELAYED_WORK(&balanced_work, balanced_work_func);
 
