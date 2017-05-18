@@ -29,7 +29,11 @@
 #include <linux/tick.h>
 #include <asm/cputime.h>
 
-#define CPUNAMELEN 8
+#define CPUNAMELEN (8)
+#define DEF_BALANCE_LEVEL		(30)
+#define DEF_UP_DELAY		(20)
+#define DEF_DOWN_DELAY		(1000)
+#define DEF_LOAD_SAMPLE_RATE	(20) /* msec */
 
 typedef enum {
 	CPU_SPEED_BALANCED,
@@ -57,13 +61,13 @@ static struct timer_list load_timer;
 static bool load_timer_active;
 
 /* configurable parameters */
-static unsigned int  balance_level = 60;
+static unsigned int  balance_level = DEF_BALANCE_LEVEL;
 static unsigned int  idle_bottom_freq;
 static unsigned int  idle_top_freq;
 static unsigned long up_delay;
 static unsigned long down_delay;
 static unsigned long last_change_time;
-static unsigned int  load_sample_rate = 20; /* msec */
+static unsigned int  load_sample_rate = DEF_LOAD_SAMPLE_RATE;
 static struct delayed_work balanced_work;
 static BALANCED_STATE balanced_state;
 static struct kobject *balanced_kobject;
@@ -505,8 +509,8 @@ static int balanced_start(void)
 
 	INIT_DELAYED_WORK(&balanced_work, balanced_work_func);
 
-	up_delay = msecs_to_jiffies(100);
-	down_delay = msecs_to_jiffies(2000);
+	up_delay = msecs_to_jiffies(DEF_UP_DELAY);
+	down_delay = msecs_to_jiffies(DEF_DOWN_DELAY);
 
 	table = cpufreq_frequency_get_table(0);
 	if (!table)
