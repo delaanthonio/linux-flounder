@@ -30,6 +30,14 @@
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
+static void sa_set_cpufreq_at_most(struct cpufreq_policy *policy, int freq) {
+	__cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_H);
+}
+
+static void sa_set_cpufreq_at_least(struct cpufreq_policy *policy, int freq) {
+	__cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_L);
+}
+
 /**
  * sa_check_cpu - check to scale a CPU's frequency
  * @cpu the CPU to check.
@@ -52,22 +60,17 @@ static void sa_check_cpu(int cpu, unsigned int load)
 
 	/* Check for frequency decrease */
 	if (load < sa_tuners->down_threshold) {
-		if (touchboost_is_enabled(sa_tuners->touchboost_timeout)) {
+		if (touchboost_is_enabled(sa_tuners->touchboost_timeout))
 			freq_target = sa_tuners->touchboost_min_freq;
-			__cpufreq_driver_target(policy, freq_target,
-						CPUFREQ_RELATION_H);
-		} else {
+		else
 			freq_target = (policy->cur + policy->min) / 2;
-			__cpufreq_driver_target(policy, freq_target,
-						CPUFREQ_RELATION_H);
-		}
+		sa_set_cpufreq_at_most(policy, freq_target);
 	}
 
 	/* Check for frequency increase */
 	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
 		freq_target = (policy->max + policy->cur) / 2;
-		__cpufreq_driver_target(policy, freq_target,
-					CPUFREQ_RELATION_L);
+		sa_set_cpufreq_at_least(policy, freq_target);
 	}
 }
 
