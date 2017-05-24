@@ -59,11 +59,9 @@ if [ $(grep -c "import /init.sublime.rc" /tmp/ramdisk/init.rc) == 0 ]; then
    sed -i "/import \/init\.trace\.rc/aimport /init.sublime.rc" /tmp/ramdisk/init.rc
 fi
 
-#copy sublime scripts
-cp /tmp/sublime.sh /tmp/ramdisk/sbin/sublime.sh
-chmod 755 /tmp/ramdisk/sbin/sublime.sh
+#copy sublime script
 cp /tmp/init.sublime.rc /tmp/ramdisk/init.sublime.rc
-
+chmod 0750 /tmp/ramdisk/init.sublime.rc
 
 find . | cpio -o -H newc | gzip > /tmp/boot.img-ramdisk.gz
 rm -r /tmp/ramdisk
