@@ -68,7 +68,10 @@ static void sa_check_cpu(int cpu, unsigned int load)
 
 	/* Check for frequency increase */
 	else if (load >= sa_tuners->up_threshold) {
-		freq_target = (policy->max + policy->cur) / 2;
+		if (touchboost_is_enabled(sa_tuners->touchboost_timeout))
+			freq_target = policy->max;
+		else
+			freq_target = (policy->max + policy->cur) / 2;
 		sa_set_cpufreq_at_least(policy, freq_target);
 	}
 }
