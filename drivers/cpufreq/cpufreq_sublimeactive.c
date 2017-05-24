@@ -55,7 +55,6 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
 	struct dbs_data *const dbs_data = policy->governor_data;
 	const struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
-	const unsigned int prev_load = dbs_info->cdbs.prev_load;
 	unsigned int freq_target = 0;
 
 	/* Check for frequency decrease */
@@ -68,7 +67,7 @@ static void sa_check_cpu(int cpu, unsigned int load)
 	}
 
 	/* Check for frequency increase */
-	else if (load >= max(sa_tuners->up_threshold, prev_load)) {
+	else if (load >= sa_tuners->up_threshold) {
 		freq_target = (policy->max + policy->cur) / 2;
 		sa_set_cpufreq_at_least(policy, freq_target);
 	}
