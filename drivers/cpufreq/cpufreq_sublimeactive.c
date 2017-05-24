@@ -31,26 +31,17 @@
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
-static void sa_def_check_cpu(int cpu, unsigned int load);
-
-static void (*__sa_check_cpu)(int cpu, unsigned int load) = sa_def_check_cpu;
-
-static void sa_check_cpu(int cpu, unsigned int load)
-{
-	__sa_check_cpu(cpu, load);
-}
-
 /**
- * This function is designed for efficient frequency scaling at low sampling rates.
- * For example, if the current busy time exceeds 80% (default), the current frequency
- * will be averaged with the max frequency instead of shooting to the max frequency
- * right away. This helps to make the governor responsive without excessive power use.
- * Likewise if the current busy time is less than 40% (default), the current frequency
- * will be averaged with the minimum frequency.
- * @ cpu the cpu whose frequency should be set.
- * @ load an int between 0 and 100 that represents how busy the cpu is.
+ * sa_check_cpu - check to scale a CPU's frequency
+ * @cpu the CPU to check.
+ * @load an int between 0 and 100 that represents how busy the cpu is.
+ *
+ * If the @load exceeds 80% (default), the current @cpu frequency
+ * will be averaged with its maximum frequency. Likewise if the @load less than
+ * 40% (default), the current @cpu frequency will be averaged with its minimum
+ * frequency.
  */
-static void sa_def_check_cpu(int cpu, unsigned int load)
+static void sa_check_cpu(int cpu, unsigned int load)
 {
 	struct sa_cpu_dbs_info_s const *dbs_info =
 		&per_cpu(sa_cpu_dbs_info, cpu);
@@ -80,24 +71,6 @@ static void sa_def_check_cpu(int cpu, unsigned int load)
 		__cpufreq_driver_target(policy, freq_target,
 					CPUFREQ_RELATION_L);
 	}
-}
-
-/**
- * Scale the cpu freq proportional to the load. This is used when the display is off
- * Due to the interval between cpu samples being increased. There will not be as
- * many spikes in the load that occurs when the sampling inverval is lower.
- * @ cpu the cpu whose frequency should be set.
- * @ load an int between 0 and 100 that represents how busy the cpu is.
- */
-
-static void sa_display_off_check_cpu(int cpu, unsigned int load)
-{
-	struct sa_cpu_dbs_info_s const *dbs_info =
-		&per_cpu(sa_cpu_dbs_info, cpu);
-	struct cpufreq_policy *policy = dbs_info->cdbs.cur_policy;
-	unsigned int freq_target = policy->min;
-	freq_target += (policy->max - policy->min) * load / MAX_LOAD;
-	__cpufreq_driver_target(policy, freq_target, CPUFREQ_RELATION_H);
 }
 
 static void sa_dbs_timer(struct work_struct *work)
@@ -135,12 +108,10 @@ static int display_notifier(struct notifier_block *nb,
 
 	switch (display_state) {
 	case DISPLAY_ON:
-		__sa_check_cpu = sa_def_check_cpu;
 		sampling_rate = DISPLAY_ON_SAMPLING_RATE;
 		break;
 
 	case DISPLAY_OFF:
-		__sa_check_cpu = sa_display_off_check_cpu;
 		sampling_rate = DISPLAY_OFF_SAMPLING_RATE;
 		break;
 
