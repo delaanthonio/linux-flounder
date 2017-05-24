@@ -22,8 +22,8 @@
 #define DEF_FREQ_UP_THRESHOLD		(80)
 #define DEF_FREQ_DOWN_THRESHOLD		(40)
 #define DEF_TOUCHBOOST_MIN_FREQ		(1428000)
-#define DEF_TOUCHBOOST_DURATION		(500 * USEC_PER_MSEC)	// 500 ms
-#define MAX_TOUCHBOOST_DURATION		(2000 * USEC_PER_MSEC)	// 2 sec
+#define DEF_TOUCHBOOST_TIMEOUT		(500 * USEC_PER_MSEC)	// 500 ms
+#define MAX_TOUCHBOOST_TIMEOUT		(2000 * USEC_PER_MSEC)	// 2 sec
 #define DISPLAY_ON_SAMPLING_RATE	(15 * USEC_PER_MSEC)	// 15 ms
 #define DISPLAY_OFF_SAMPLING_RATE	(500 * USEC_PER_MSEC)	// 500 ms
 #define MAX_LOAD			(100)
@@ -53,7 +53,7 @@ static void sa_check_cpu(int cpu, unsigned int load)
 
 	/* Check for frequency decrease */
 	if (load < sa_tuners->down_threshold) {
-		if (touchboost_is_enabled(sa_tuners->touchboost_dur)) {
+		if (touchboost_is_enabled(sa_tuners->touchboost_timeout)) {
 			freq_target = sa_tuners->touchboost_min_freq;
 			__cpufreq_driver_target(policy, freq_target,
 						CPUFREQ_RELATION_H);
@@ -207,7 +207,7 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 	return count;
 }
 
-static ssize_t store_touchboost_dur(struct dbs_data *dbs_data, const char *buf,
+static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data, const char *buf,
 				    size_t count)
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
@@ -216,10 +216,10 @@ static ssize_t store_touchboost_dur(struct dbs_data *dbs_data, const char *buf,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > MAX_TOUCHBOOST_DURATION)
+	if (ret != 1 || input > MAX_TOUCHBOOST_TIMEOUT)
 		return -EINVAL;
 
-	sa_tuners->touchboost_dur = input;
+	sa_tuners->touchboost_timeout = input;
 	return count;
 }
 
@@ -227,18 +227,18 @@ show_one(sa, sampling_rate);
 show_store_one(sa, up_threshold);
 show_store_one(sa, down_threshold);
 show_store_one(sa, touchboost_min_freq);
-show_store_one(sa, touchboost_dur);
+show_store_one(sa, touchboost_timeout);
 
 gov_sys_pol_attr_ro(sampling_rate);
 gov_sys_pol_attr_rw(up_threshold);
 gov_sys_pol_attr_rw(down_threshold);
 gov_sys_pol_attr_rw(touchboost_min_freq);
-gov_sys_pol_attr_rw(touchboost_dur);
+gov_sys_pol_attr_rw(touchboost_timeout);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
 	&sampling_rate_gov_sys.attr,  &up_threshold_gov_sys.attr,
 	&down_threshold_gov_sys.attr, &touchboost_min_freq_gov_sys.attr,
-	&touchboost_dur_gov_sys.attr, NULL};
+	&touchboost_timeout_gov_sys.attr, NULL};
 
 static struct attribute_group sa_attr_group_gov_sys = {
 	.attrs = dbs_attributes_gov_sys, .name = "sublime_active",
@@ -247,7 +247,7 @@ static struct attribute_group sa_attr_group_gov_sys = {
 static struct attribute *dbs_attributes_gov_pol[] = {
 	&sampling_rate_gov_pol.attr,  &up_threshold_gov_pol.attr,
 	&down_threshold_gov_pol.attr, &touchboost_min_freq_gov_pol.attr,
-	&touchboost_dur_gov_pol.attr, NULL};
+	&touchboost_timeout_gov_pol.attr, NULL};
 
 static struct attribute_group sa_attr_group_gov_pol = {
 	.attrs = dbs_attributes_gov_pol, .name = "sublime_active",
@@ -267,7 +267,7 @@ static int sa_init(struct dbs_data *dbs_data)
 	tuners->up_threshold = DEF_FREQ_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQ_DOWN_THRESHOLD;
 	tuners->touchboost_min_freq = DEF_TOUCHBOOST_MIN_FREQ;
-	tuners->touchboost_dur = DEF_TOUCHBOOST_DURATION;
+	tuners->touchboost_timeout = DEF_TOUCHBOOST_TIMEOUT;
 
 	dbs_data->tuners = tuners;
 	dbs_data->min_sampling_rate = DISPLAY_ON_SAMPLING_RATE;
