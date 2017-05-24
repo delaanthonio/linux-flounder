@@ -59,9 +59,21 @@ if [ $(grep -c "import /init.sublime.rc" /tmp/ramdisk/init.rc) == 0 ]; then
    sed -i "/import \/init\.environ\.rc/aimport /init.sublime.rc" /tmp/ramdisk/init.rc
 fi
 
+#Start spectrum script
+if [ $(grep -c "import /init.spectrum.rc" /tmp/ramdisk/init.rc) == 0 ]; then
+    sed -i "/import \/init\.environ\.rc/aimport /init.spectrum.rc" /tmp/ramdisk/init.rc
+fi
+
 #copy sublime script
 cp /tmp/init.sublime.rc /tmp/ramdisk/init.sublime.rc
 chmod 0750 /tmp/ramdisk/init.sublime.rc
+
+#copy spectrum script
+cp /tmp/init.spectrum.rc /tmp/ramdisk/init.spectrum.rc
+chmod 0750 /tmp/ramdisk/init.spectrum.rc
+
+cp /tmp/init.spectrum.sh /tmp/ramdisk/init.spectrum.sh
+chmod 0750 /tmp/ramdisk/init.spectrum.sh
 
 find . | cpio -o -H newc | gzip > /tmp/boot.img-ramdisk.gz
 rm -r /tmp/ramdisk
