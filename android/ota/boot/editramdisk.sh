@@ -56,7 +56,7 @@ fi
 
 #Start sublime script
 if [ $(grep -c "import /init.sublime.rc" /tmp/ramdisk/init.rc) == 0 ]; then
-   sed -i "/import \/init\.trace\.rc/aimport /init.sublime.rc" /tmp/ramdisk/init.rc
+   sed -i "/import \/init\.environ\.rc/aimport /init.sublime.rc" /tmp/ramdisk/init.rc
 fi
 
 #copy sublime script
