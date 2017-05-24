@@ -65,16 +65,5 @@ chmod 755 /tmp/ramdisk/sbin/sublime.sh
 cp /tmp/init.sublime.rc /tmp/ramdisk/init.sublime.rc
 
 
-#Start zram
-#if [ $(grep -c "max_comp_streams" /tmp/ramdisk/init.flounder.rc) == 0 ]; then
-#   sed -i "/Turn on swap/a    write /sys/block/zram0/max_comp_streams 2" /tmp/ramdisk/init.flounder.rc
-#   sed -i "/max_comp_streams/a    write /sys/block/zram0/comp_algorithm lz4" /tmp/ramdisk/init.flounder.rc
-#fi
-#if [ $(grep -c "max_comp_streams" /tmp/ramdisk/init.flounder64.rc) == 0 ]; then
-#   sed -i "/Turn on swap/a\ \ \ \ write /sys/block/zram0/max_comp_streams 2" /tmp/ramdisk/init.flounder64.rc
-#   sed -i "/max_comp_streams/a\ \ \ \ write /sys/block/zram0/comp_algorithm lz4" /tmp/ramdisk/init.flounder64.rc
-#fi
-
-
 find . | cpio -o -H newc | gzip > /tmp/boot.img-ramdisk.gz
 rm -r /tmp/ramdisk
