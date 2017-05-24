@@ -18,14 +18,13 @@
 
 #include "cpufreq_governor.h"
 
-/* Sublime_active governor macros */
 #define DEF_FREQ_UP_THRESHOLD		(80)
 #define DEF_FREQ_DOWN_THRESHOLD		(40)
 #define DEF_TOUCHBOOST_MIN_FREQ		(1428000)
-#define DEF_TOUCHBOOST_TIMEOUT		(500 * USEC_PER_MSEC)	// 500 ms
-#define MAX_TOUCHBOOST_TIMEOUT		(2000 * USEC_PER_MSEC)	// 2 sec
-#define DISPLAY_ON_SAMPLING_RATE	(15 * USEC_PER_MSEC)	// 15 ms
-#define DISPLAY_OFF_SAMPLING_RATE	(500 * USEC_PER_MSEC)	// 500 ms
+#define DEF_TOUCHBOOST_TIMEOUT		(500 * USEC_PER_MSEC)	// 500  ms
+#define MAX_TOUCHBOOST_TIMEOUT		(2000 * USEC_PER_MSEC)	// 3000 ms
+#define DISPLAY_ON_SAMPLING_RATE	(15 * USEC_PER_MSEC)	// 15   ms
+#define DISPLAY_OFF_SAMPLING_RATE	(500 * USEC_PER_MSEC)	// 500  ms
 #define MAX_LOAD			(100)
 #define MIN_LOAD			(11)
 
@@ -62,7 +61,6 @@ static void sa_check_cpu(int cpu, unsigned int load)
 			__cpufreq_driver_target(policy, freq_target,
 						CPUFREQ_RELATION_H);
 		}
-
 	}
 
 	/* Check for frequency increase */
@@ -96,12 +94,15 @@ static void sa_dbs_timer(struct work_struct *work)
 }
 
 /**
- * Set the sampling rate based on the state of the display.
- * The sampling rate is lowered when the display is off and increased when
- * the display is on.
+ * sa_display_notifier_callback - set sampling rate based on %display_state
+ * @np: unused
+ * @display_state: the state of the display
+ * @data: unused
+ *
+ * Conserve energy by increasing the %sampling_rate when the display is off.
  */
-static int display_notifier(struct notifier_block *nb,
-			    unsigned long display_state, void *data)
+static int sa_display_notifier_callback(struct notifier_block *nb,
+					unsigned long display_state, void *data)
 {
 	unsigned int sampling_rate;
 	unsigned int cpu;
@@ -127,8 +128,7 @@ static int display_notifier(struct notifier_block *nb,
 	printk(KERN_INFO "Sampling rate set to %u\n", sampling_rate);
 #endif
 
-	for_each_possible_cpu(cpu)
-	{
+	for_each_possible_cpu(cpu) {
 		struct sa_cpu_dbs_info_s *const dbs_info =
 			&per_cpu(sa_cpu_dbs_info, cpu);
 		struct cpufreq_policy *const policy = dbs_info->cdbs.cur_policy;
@@ -139,8 +139,8 @@ static int display_notifier(struct notifier_block *nb,
 	return NOTIFY_OK;
 }
 
-static struct notifier_block display_nb = {
-	.notifier_call = display_notifier,
+static struct notifier_block sa_display_nb = {
+	.notifier_call = sa_display_notifier_callback,
 };
 
 /************************** sysfs interface ************************/
@@ -208,7 +208,7 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 }
 
 static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data, const char *buf,
-				    size_t count)
+					size_t count)
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
 
@@ -236,18 +236,26 @@ gov_sys_pol_attr_rw(touchboost_min_freq);
 gov_sys_pol_attr_rw(touchboost_timeout);
 
 static struct attribute *dbs_attributes_gov_sys[] = {
-	&sampling_rate_gov_sys.attr,  &up_threshold_gov_sys.attr,
-	&down_threshold_gov_sys.attr, &touchboost_min_freq_gov_sys.attr,
-	&touchboost_timeout_gov_sys.attr, NULL};
+	&sampling_rate_gov_sys.attr,
+	&up_threshold_gov_sys.attr,
+	&down_threshold_gov_sys.attr,
+	&touchboost_min_freq_gov_sys.attr,
+	&touchboost_timeout_gov_sys.attr,
+	NULL
+};
 
 static struct attribute_group sa_attr_group_gov_sys = {
 	.attrs = dbs_attributes_gov_sys, .name = "sublime_active",
 };
 
 static struct attribute *dbs_attributes_gov_pol[] = {
-	&sampling_rate_gov_pol.attr,  &up_threshold_gov_pol.attr,
-	&down_threshold_gov_pol.attr, &touchboost_min_freq_gov_pol.attr,
-	&touchboost_timeout_gov_pol.attr, NULL};
+	&sampling_rate_gov_pol.attr,
+	&up_threshold_gov_pol.attr,
+	&down_threshold_gov_pol.attr,
+	&touchboost_min_freq_gov_pol.attr,
+	&touchboost_timeout_gov_pol.attr,
+	NULL
+};
 
 static struct attribute_group sa_attr_group_gov_pol = {
 	.attrs = dbs_attributes_gov_pol, .name = "sublime_active",
@@ -272,13 +280,13 @@ static int sa_init(struct dbs_data *dbs_data)
 	dbs_data->tuners = tuners;
 	dbs_data->min_sampling_rate = DISPLAY_ON_SAMPLING_RATE;
 	mutex_init(&dbs_data->mutex);
-	display_state_register_notifier(&display_nb);
+	display_state_register_notifier(&sa_display_nb);
 	return 0;
 }
 
 static void sa_exit(struct dbs_data *dbs_data)
 {
-	display_state_unregister_notifier(&display_nb);
+	display_state_unregister_notifier(&sa_display_nb);
 	kfree(dbs_data->tuners);
 }
 
@@ -306,11 +314,11 @@ static int sa_cpufreq_governor_dbs(struct cpufreq_policy *policy,
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_SUBLIMEACTIVE
 static
 #endif
-	struct cpufreq_governor cpufreq_gov_sublimeactive = {
-		.name = "sublime_active",
-		.governor = sa_cpufreq_governor_dbs,
-		.max_transition_latency = TRANSITION_LATENCY_LIMIT,
-		.owner = THIS_MODULE,
+struct cpufreq_governor cpufreq_gov_sublimeactive = {
+	.name = "sublime_active",
+	.governor = sa_cpufreq_governor_dbs,
+	.max_transition_latency = TRANSITION_LATENCY_LIMIT,
+	.owner = THIS_MODULE,
 };
 
 static int __init cpufreq_gov_dbs_init(void)
@@ -324,8 +332,8 @@ static void __exit cpufreq_gov_dbs_exit(void)
 }
 
 MODULE_AUTHOR("Dela Anthonio");
-MODULE_DESCRIPTION("'cpufreq_sublime' - A dynamic CPU frequency governor for"
-		   "Low latency frequency transition capable processors. "
+MODULE_DESCRIPTION("'cpufreq_sublimeactive' - A dynamic CPU frequency governor"
+		   "for low latency frequency transition capable processors."
 		   "This governor is optimized for devices which have a"
 		   "touchscreen and limited battery capacity");
 MODULE_LICENSE("GPL");
