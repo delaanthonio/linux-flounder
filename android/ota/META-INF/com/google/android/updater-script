@@ -15,12 +15,15 @@
 
 set_progress(0.0);
 ui_print("");
-ui_print("Installing Sublime N9 v3.x.x");
+ui_print("Installing Sublime-N9 v3.x.x");
 
 set_progress(0.1);
 
 package_extract_dir("config", "/tmp");
 set_perm(0, 0, 0777, "/tmp/busybox");
+
+run_program("/tmp/busybox", "fstrim", "/cache");
+run_program("/tmp/busybox", "fstrim", "/data");
 
 set_progress(0.3);
 
@@ -41,4 +44,4 @@ run_program("/tmp/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform
 
 ui_print("");
 set_progress(1.0);
-ui_print("Sublime N9 v3.x.x installed");
+ui_print("Sublime-N9 v3.x.x installed");
