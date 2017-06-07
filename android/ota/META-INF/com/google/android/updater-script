@@ -15,12 +15,16 @@
 
 set_progress(0.0);
 ui_print("");
-ui_print("Installing Sublime N9 v3.x.x");
+ui_print("Installing Sublime-N9 v3.x.x");
 
 set_progress(0.1);
 
-package_extract_dir("config", "/tmp");
+package_extract_dir("lib", "/tmp");
 set_perm(0, 0, 0777, "/tmp/busybox");
+set_perm(0, 0, 0777, "/tmp/patchsys.sh");
+
+run_program("/tmp/busybox", "fstrim", "/cache");
+run_program("/tmp/busybox", "fstrim", "/data");
 
 set_progress(0.3);
 
@@ -35,10 +39,11 @@ run_program("/tmp/busybox", "dd", "if=/dev/block/platform/sdhci-tegra.3/by-name/
 run_program("/tmp/unpackbootimg", "-i", "/tmp/boot.img", "-o", "/tmp/");
 run_program("/tmp/editramdisk.sh");
 run_program("/tmp/makebootimg.sh");
+run_program("/tmp/patchsys.sh");
 
 set_progress(0.7);
 run_program("/tmp/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform/sdhci-tegra.3/by-name/LNX");
 
 ui_print("");
 set_progress(1.0);
-ui_print("Sublime N9 v3.x.x installed");
+ui_print("Sublime-N9 v3.x.x installed");

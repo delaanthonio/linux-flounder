@@ -387,7 +387,7 @@ EXPORT_SYMBOL(set_normalized_timespec);
  *
  * Returns the timespec representation of the nsec parameter.
  */
-struct timespec ns_to_timespec(const s64 nsec)
+struct timespec __attribute__((const)) ns_to_timespec(const s64 nsec)
 {
 	struct timespec ts;
 	s32 rem;
@@ -412,7 +412,7 @@ EXPORT_SYMBOL(ns_to_timespec);
  *
  * Returns the timeval representation of the nsec parameter.
  */
-struct timeval ns_to_timeval(const s64 nsec)
+struct timeval __attribute__((const)) ns_to_timeval(const s64 nsec)
 {
 	struct timespec ts = ns_to_timespec(nsec);
 	struct timeval tv;
@@ -438,7 +438,7 @@ EXPORT_SYMBOL(ns_to_timeval);
  *
  * We must also be careful about 32-bit overflows.
  */
-unsigned long msecs_to_jiffies(const unsigned int m)
+unsigned long __attribute__((const)) msecs_to_jiffies(const unsigned int m)
 {
 	/*
 	 * Negative value, means infinite timeout:
@@ -480,7 +480,7 @@ unsigned long msecs_to_jiffies(const unsigned int m)
 }
 EXPORT_SYMBOL(msecs_to_jiffies);
 
-unsigned long usecs_to_jiffies(const unsigned int u)
+unsigned long __attribute__((const)) usecs_to_jiffies(const unsigned int u)
 {
 	if (u > jiffies_to_usecs(MAX_JIFFY_OFFSET))
 		return MAX_JIFFY_OFFSET;
@@ -510,7 +510,7 @@ EXPORT_SYMBOL(usecs_to_jiffies);
  * The >> (NSEC_JIFFIE_SC - SEC_JIFFIE_SC) converts the scaled nsec
  * value to a scaled second value.
  */
-static unsigned long
+static unsigned long __attribute__((const))
 __timespec_to_jiffies(unsigned long sec, long nsec)
 {
 	nsec = nsec + TICK_NSEC - 1;

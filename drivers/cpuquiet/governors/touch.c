@@ -33,7 +33,6 @@
 #define TOUCHBOOST_DURATION	(1000 * USEC_PER_MSEC)
 #define DEF_UP_DELAY		(50)
 #define DEF_DOWN_DELAY		(1000)
-#define DEF_BALANCE_LEVEL	(30)
 #define DEF_LOAD_SAMPLE_RATE	(20)
 
 typedef enum {
@@ -56,7 +55,6 @@ static struct timer_list load_timer;
 static bool load_timer_active;
 
 /* configurable parameters */
-static unsigned int  balance_level = DEF_BALANCE_LEVEL;
 static unsigned long up_delay;
 static unsigned long down_delay;
 
@@ -164,8 +162,7 @@ static unsigned int count_slow_cpus(unsigned int limit)
 
 static bool load_is_skewed(void)
 {
-	unsigned long highest_load = cpu_highest_load();
-	unsigned long skewed_load = (highest_load + balance_level) / 4;
+	unsigned long skewed_load = cpu_highest_load() / 4;
 
 	/*  skewed: freq targets for at least 2 CPUs are below 25% threshold */
 	return count_slow_cpus(skewed_load) >= 1;
@@ -259,13 +256,11 @@ static void delay_callback(struct cpuquiet_attribute *attr)
 	}
 }
 
-CPQ_BASIC_ATTRIBUTE(balance_level, 0644, uint);
 CPQ_BASIC_ATTRIBUTE(load_sample_rate, 0644, uint);
 CPQ_ATTRIBUTE(up_delay, 0644, ulong, delay_callback);
 CPQ_ATTRIBUTE(down_delay, 0644, ulong, delay_callback);
 
 static struct attribute *touch_attributes[] = {
-	&balance_level_attr.attr,
 	&up_delay_attr.attr,
 	&down_delay_attr.attr,
 	&load_sample_rate_attr.attr,

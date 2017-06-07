@@ -206,7 +206,7 @@ struct sa_dbs_tuners {
 	unsigned int up_threshold;
 	unsigned int down_threshold;
 	unsigned int touchboost_min_freq;
-	unsigned int touchboost_dur;
+	unsigned int touchboost_timeout;
 };
 
 struct ex_dbs_tuners {
