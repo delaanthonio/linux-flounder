@@ -32,6 +32,7 @@ modules.builtin
 *.lzo
 *.patch
 *.gcno
+*.md5
 
 #scripts
 *.sh
@@ -93,6 +94,7 @@ GTAGS
 *.patch
 *~
 *.list
+*.log
 modules
 stock
 \#*#
