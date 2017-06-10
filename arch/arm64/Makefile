@@ -89,9 +89,21 @@ endif
 
 KBUILD_DTBS	:= dtbs
 
-all:	$(KBUILD_IMAGE) $(KBUILD_DTBS)
+all:	otapackage $(KBUILD_IMAGE) $(KBUILD_DTBS)
 
 boot := arch/arm64/boot
+
+ota := android/ota
+
+local_version := $(shell echo $(CONFIG_LOCALVERSION) | cut -d '"' -f2 - | cut -c2- | tr '[:upper:]' '[:lower:]')
+
+otapackage_name := $(local_version).zip
+
+# Directory to store OTA package files
+KBUILD_FLOUNDER_OUTPUT ?= android
+
+# Path to OTA package
+output := $(KBUILD_FLOUNDER_OUTPUT)/$(otapackage_name)
 
 # FIXME: copied from arch/arm/Makefile
 archprepare:
@@ -112,11 +124,17 @@ dtbs: scripts
 Image.gz-dtb: vmlinux scripts dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
+otapackage: $(KBUILD_IMAGE)
+	cp $(boot)/$< $(ota)/boot/
+	$(shell cd $(ota) && zip -r -q $(output) ./META-INF ./boot ./lib && cd $(KBUILD_FLOUNDER_OUTPUT) && md5sum -b $(otapackage_name) > $(otapackage_name).md5)
+	@echo "OTA package: $(output)"
+
 # We use MRPROPER_FILES and CLEAN_FILES now
 archclean:
 	$(Q)$(MAKE) $(clean)=$(boot)
 
 define archhelp
+  echo  '* otapackage    - Android OTA package ($(output))'
   echo  '* Image.gz      - Compressed kernel image (arch/$(ARCH)/boot/Image.gz)'
   echo  '  Image         - Uncompressed kernel image (arch/$(ARCH)/boot/Image)'
   echo  '* dtbs          - Build device tree blobs for enabled boards'
