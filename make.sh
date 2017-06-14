@@ -10,7 +10,7 @@ export SUBARCH=arm64
 echo 'exporting SubArch'
 
 # Export toolchain, use android default
-export CROSS_COMPILE=/home/prbassplayer/ng7.1/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+export CROSS_COMPILE=/home/prbassplayer/Slim7/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 
 # Make sure build is clean!
 echo 'Cleaning build'
@@ -18,8 +18,13 @@ make clean
 
 # Generates a new .config and exists
 if [ "$1" = "config" ] ; then
-    echo 'Making defconfig for mondrianwifi'
-    make flounder_defconfig
+    if [ "$2" = "aosp" ] ; then
+        echo 'Making defconfig for flounder aosp'
+        make flounder_defconfig
+    else
+        echo 'Making defconfig for flounder slim'
+        make slim_flounder_defconfig
+    fi
     exit
 fi
 
