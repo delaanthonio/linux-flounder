@@ -262,7 +262,7 @@ static struct tegra_io_dpd csie_io = {
 static struct regulator *imx219_ext_reg1;
 static struct regulator *imx219_ext_reg2;
 
-static int ardbeg_imx219_get_extra_regulators()
+static int ardbeg_imx219_get_extra_regulators(void)
 {
 	imx219_ext_reg1 = regulator_get(NULL, "imx135_reg1");
 	if (WARN_ON(IS_ERR(imx219_ext_reg1))) {
@@ -1253,16 +1253,6 @@ static struct nvc_focus_cap ardbeg_drv201_cap = {
 	.focus_macro = 810,
 	.focus_infinity = 50,
 	.focus_hyper = 50,
-};
-
-static struct drv201_platform_data ardbeg_drv201_pdata = {
-	.cfg = 0,
-	.num = 0,
-	.sync = 0,
-	.dev_name = "focuser",
-	.cap = &ardbeg_drv201_cap,
-	.power_on	= ardbeg_drv201_power_on,
-	.power_off	= ardbeg_drv201_power_off,
 };
 
 static int ardbeg_ad5823_power_on(struct ad5823_platform_data *pdata)
