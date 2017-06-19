@@ -899,7 +899,8 @@ static inline void calibration_timer_update(struct tegra_cl_dvfs *cld)
 
 static void cl_dvfs_calibrate(struct tegra_cl_dvfs *cld)
 {
-	u32 val, data;
+	u32 val = 0;
+	u32 data = 0;
 	ktime_t now;
 	unsigned long rate;
 	unsigned long step = RATE_STEP(cld);
