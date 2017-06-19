@@ -1145,13 +1145,13 @@ static int __init ardbeg_touch_init(void)
 				rm31080ts_t132loki_data.name_of_clock_con = NULL;
 			} else
 				tegra_clk_init_from_table(touch_clk_init_table);
-				rm31080a_ardbeg_spi_board[0].irq =
-					gpio_to_irq(TOUCH_GPIO_IRQ_RAYDIUM_SPI);
-				touch_init_raydium(TOUCH_GPIO_IRQ_RAYDIUM_SPI,
-					TOUCH_GPIO_RST_RAYDIUM_SPI,
-					&rm31080ts_t132loki_data,
-					&rm31080a_ardbeg_spi_board[0],
-					ARRAY_SIZE(rm31080a_ardbeg_spi_board));
+            rm31080a_ardbeg_spi_board[0].irq =
+                gpio_to_irq(TOUCH_GPIO_IRQ_RAYDIUM_SPI);
+            touch_init_raydium(TOUCH_GPIO_IRQ_RAYDIUM_SPI,
+                               TOUCH_GPIO_RST_RAYDIUM_SPI,
+                               &rm31080ts_t132loki_data,
+                               &rm31080a_ardbeg_spi_board[0],
+                               ARRAY_SIZE(rm31080a_ardbeg_spi_board));
 		} else if (board_info.board_id == BOARD_P1761) {
 			rm31080a_tn8_spi_board[0].irq =
 				gpio_to_irq(TOUCH_GPIO_IRQ_RAYDIUM_SPI);
@@ -1411,10 +1411,10 @@ static void __init tegra_ardbeg_late_init(void)
 	else
 		ardbeg_panel_init();
 
-		/* put PEX pads into DPD mode to save additional power */
-		tegra_io_dpd_enable(&pexbias_io);
-		tegra_io_dpd_enable(&pexclk1_io);
-		tegra_io_dpd_enable(&pexclk2_io);
+    /* put PEX pads into DPD mode to save additional power */
+    tegra_io_dpd_enable(&pexbias_io);
+    tegra_io_dpd_enable(&pexclk1_io);
+    tegra_io_dpd_enable(&pexclk2_io);
 
 	if (board_info.board_id == BOARD_E2548 ||
 			board_info.board_id == BOARD_P2530)
