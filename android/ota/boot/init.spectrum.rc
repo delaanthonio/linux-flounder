@@ -16,8 +16,6 @@ on property:sys.boot_completed=1
 on property:persist.spectrum.profile=0
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor sublime_active
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor sublime_active
-   write /sys/devices/system/cpu/cpufreq/sublime_active/up_threshold 80
-   write /sys/devices/system/cpu/cpufreq/sublime_active/down_threshold 40
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 306000
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 306000
    write /sys/kernel/debug/clock/cpu_g/min 306000000
@@ -28,11 +26,11 @@ on property:persist.spectrum.profile=0
    write /sys/devices/system/cpu/cpuquiet/tegra_cpuquiet/enable 1
    write /sys/devices/system/cpu/cpuquiet/current_governor balanced
 
-   write /sys/kernel/tegra_gpu/gpu_cap_rate 708000000
+   write /sys/kernel/tegra_gpu/gpu_cap_rate 852000000
    write /sys/kernel/tegra_gpu/gpu_cap_state 1
    write /sys/block/mmcblk0/queue/scheduler fiops
    write /sys/block/mmcblk0/queue/rq_affinity 1
-   write /sys/block/mmcblk0/queue/read_ahead_kb 1024
+   write /sys/block/mmcblk0/queue/read_ahead_kb 512
 
    write /proc/sys/vm/swappiness 60
 
@@ -42,8 +40,6 @@ on property:persist.spectrum.profile=0
 on property:persist.spectrum.profile=1
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor sublime_active
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor sublime_active
-   write /sys/devices/system/cpu/cpufreq/sublime_active/up_threshold 80
-   write /sys/devices/system/cpu/cpufreq/sublime_active/down_threshold 40
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 510000
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 510000
    write /sys/kernel/debug/clock/cpu_g/min 501000000
@@ -69,8 +65,6 @@ on property:persist.spectrum.profile=1
 on property:persist.spectrum.profile=2
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor sublime_active
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor sublime_active
-   write /sys/devices/system/cpu/cpufreq/sublime_active/up_threshold 85
-   write /sys/devices/system/cpu/cpufreq/sublime_active/down_threshold 45
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 204000
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 204000
    write /sys/kernel/debug/clock/cpu_g/min 204000000
@@ -81,12 +75,12 @@ on property:persist.spectrum.profile=2
    write /sys/devices/system/cpu/cpuquiet/tegra_cpuquiet/enable 1
    write /sys/devices/system/cpu/cpuquiet/current_governor touch
 
-   write /sys/kernel/tegra_gpu/gpu_cap_rate 648000000
+   write /sys/kernel/tegra_gpu/gpu_cap_rate 708000000
    write /sys/kernel/tegra_gpu/gpu_cap_state 1
 
    write /sys/block/mmcblk0/queue/scheduler noop
    write /sys/block/mmcblk0/queue/rq_affinity 0
-   write /sys/block/mmcblk0/queue/read_ahead_kb 512
+   write /sys/block/mmcblk0/queue/read_ahead_kb 256
 
    write /proc/sys/vm/swappiness 60
 
@@ -96,8 +90,6 @@ on property:persist.spectrum.profile=2
 on property:persist.spectrum.profile=3
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor sublime_active
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor sublime_active
-   write /sys/devices/system/cpu/cpufreq/sublime_active/up_threshold 80
-   write /sys/devices/system/cpu/cpufreq/sublime_active/down_threshold 40
    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 510000
    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq 510000
    write /sys/kernel/debug/clock/cpu_g/min 501000000
