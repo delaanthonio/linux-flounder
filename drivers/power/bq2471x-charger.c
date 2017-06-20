@@ -74,27 +74,6 @@ static const struct regmap_config bq2471x_regmap_config = {
 	.max_register	= BQ2471X_MAX_REGS,
 };
 
-/* Charge current limit */
-static const unsigned int dac_ichg[] = {
-	64, 128, 256, 512, 1024, 2048, 4096,
-};
-
-/* Output charge regulation voltage */
-static const unsigned int dac_v[] = {
-	16, 32, 64, 128, 256, 512, 1024, 2048,
-	4096, 8192, 16384,
-};
-
-/* Minimum system votlage */
-static const unsigned int dac_minsv[] = {
-	256, 512, 1024, 2048, 4096, 8192,
-};
-
-/* Setting input current */
-static const unsigned int dac_iin[] = {
-	64, 128, 256, 512, 1024, 2048, 4096,
-};
-
 static int bq2471x_read(struct bq2471x_chip *bq2471x,
 	unsigned int reg, unsigned int *val)
 {
