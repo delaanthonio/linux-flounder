@@ -14,6 +14,8 @@
 #ifndef __LINUX_USB_GADGET_XPORT_H__
 #define __LINUX_USB_GADGET_XPORT_H__
 
+#include <linux/string.h>
+
 enum fserial_func_type {
 	USB_FSER_FUNC_NONE,
 	USB_FSER_FUNC_SERIAL,
