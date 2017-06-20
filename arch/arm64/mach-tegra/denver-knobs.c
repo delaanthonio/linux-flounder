@@ -469,10 +469,10 @@ static int __init denver_pmic_init(void)
     if (fuse_cp_rev_check() >= 1)
         voltage = 16;
 
-	err = denver_set_pmic_config(type, (u16)voltage, lock);
+    err = denver_set_pmic_config(type, (u16)voltage, lock);
 
-	pr_info("Denver: PMIC: type = %s, voltage = %d, locked = %d\n",
-			pmic_names[type], voltage, lock);
+    pr_info("Denver: PMIC: type = %s, voltage = %d, locked = %d\n",
+	    pmic_names[type], voltage, lock);
 
 done:
 	return err;
