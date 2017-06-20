@@ -42,8 +42,6 @@ extern bool tegra_suspend_in_progress(void);
  */
 void tegra_cpu_die(unsigned int cpu)
 {
-	static unsigned long pmstate;
-
 	if (tegra_suspend_in_progress()) {
 		BUG_ON(cpu == 0);
 
@@ -79,7 +77,7 @@ noinline int mca_cpu_callback(struct notifier_block *nfb,
 				unsigned long action, void *hcpu)
 {
 	if(action == CPU_ONLINE || action == CPU_ONLINE_FROZEN)
-		smp_call_function_single((int) hcpu, setup_mca, NULL, 1);
+		smp_call_function_single((int)(intptr_t) hcpu, setup_mca, NULL, 1);
 	return 0;
 }
 
