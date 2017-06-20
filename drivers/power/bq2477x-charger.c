@@ -81,37 +81,10 @@ static const struct regmap_config bq2477x_regmap_word_config = {
 	.max_register	= BQ2477X_MAX_REGS,
 };
 
-/* Charge current limit */
-static const unsigned int dac_ichg[] = {
-	64, 128, 256, 512, 1024, 2048, 4096,
-};
-
-/* Output charge regulation voltage */
-static const unsigned int dac_v[] = {
-	16, 32, 64, 128, 256, 512, 1024, 2048,
-	4096, 8192, 16384,
-};
-
-/* Minimum system votlage */
-static const unsigned int dac_minsv[] = {
-	256, 512, 1024, 2048, 4096, 8192,
-};
-
-/* Setting input current */
-static const unsigned int dac_iin[] = {
-	64, 128, 256, 512, 1024, 2048, 4096,
-};
-
 static int bq2477x_read(struct bq2477x_chip *bq2477x,
 	unsigned int reg, unsigned int *val)
 {
 	return regmap_read(bq2477x->regmap, reg, val);
-}
-
-static int bq2477x_read_word(struct bq2477x_chip *bq2477x,
-	unsigned int reg, unsigned int *val)
-{
-	return regmap_read(bq2477x->regmap_word, reg, val);
 }
 
 static int bq2477x_write(struct bq2477x_chip *bq2477x,
@@ -174,7 +147,6 @@ static int bq2477x_show_chip_version(struct bq2477x_chip *bq2477x)
 static int bq2477x_hw_init(struct bq2477x_chip *bq2477x)
 {
 	int ret = 0;
-	unsigned int val;
 
 	/* Configure control */
 	ret = bq2477x_write(bq2477x, BQ2477X_CHARGE_OPTION_0_MSB,
@@ -227,7 +199,6 @@ static void bq2477x_work_thread(struct kthread_work *work)
 	struct bq2477x_chip *bq2477x = container_of(work,
 					struct bq2477x_chip, bq_wdt_work);
 	int ret;
-	unsigned int val;
 
 	for (;;) {
 		ret = bq2477x_hw_init(bq2477x);
