@@ -16,6 +16,8 @@
 #ifndef __ASM_STRING_H
 #define __ASM_STRING_H
 
+#include <linux/types.h>
+
 #define __HAVE_ARCH_STRRCHR
 extern char *strrchr(const char *, int c);
 
