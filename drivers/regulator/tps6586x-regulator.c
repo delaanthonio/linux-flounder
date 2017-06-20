@@ -368,7 +368,7 @@ static struct tps6586x_platform_data *tps6586x_parse_regulator_dt(
 			continue;
 
 		pdata->reg_init_data[i] = tps6586x_matches[i].init_data;
-		id = (int)tps6586x_matches[i].driver_data;
+		id = (int)(intptr_t)tps6586x_matches[i].driver_data;
 		if (id == TPS6586X_ID_SYS)
 			sys_rail = pdata->reg_init_data[i]->constraints.name;
 
