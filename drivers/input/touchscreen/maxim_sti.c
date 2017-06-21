@@ -604,7 +604,7 @@ static int device_fw_load(struct dev_data *dd, const struct firmware *fw)
 	u16  fw_crc16, chip_crc16;
 
 	fw_crc16 = crc16(0, fw->data, fw->size);
-	INFO("firmware size (%d) CRC16(0x%04X)", fw->size, fw_crc16);
+	INFO("firmware size (%zu) CRC16(0x%04X)", fw->size, fw_crc16);
 	if (bootloader_enter(dd) != 0) {
 		ERROR("failed to enter bootloader");
 		return -1;
@@ -665,7 +665,7 @@ static int fw_request_load(struct dev_data *dd)
 	}
 	if (fw->size != FIRMWARE_SIZE) {
 		release_firmware(fw);
-		ERROR("incoming firmware is of wrong size (%04X)", fw->size);
+		ERROR("incoming firmware is of wrong size (%04zX)", fw->size);
 		return -1;
 	}
 	ret = device_fw_load(dd, fw);
