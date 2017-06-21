@@ -2488,7 +2488,7 @@ static ssize_t batch_set(struct device *dev,
 	kfree(str_buf);
 
 	if ((sensors_id < 0) || (sensors_id >= num_sensors)) {
-		D("%s: Invalid sensors_id = %ld\n", __func__, sensors_id);
+		D("%s: Invalid sensors_id = %d\n", __func__, sensors_id);
 		return -EINVAL;
 	}
 
