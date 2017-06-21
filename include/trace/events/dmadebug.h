@@ -55,7 +55,7 @@ DECLARE_EVENT_CLASS(dmadebug,
 		__entry->page = page;
 	),
 
-	TP_printk("device=%s, iova=%llx, size=%d phys=%llx platformdata=%s",
+	TP_printk("device=%s, iova=%llx, size=%zu phys=%llx platformdata=%s",
 		   __get_str(name), (unsigned long long)__entry->dma_addr,
 		   __entry->size,
 		   (unsigned long long)page_to_phys(__entry->page),
