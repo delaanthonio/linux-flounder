@@ -1315,7 +1315,7 @@ static int as364x_regulator_get(struct as364x_info *info,
 	reg = regulator_get(info->dev, vreg_name);
 	if (unlikely(IS_ERR(reg))) {
 		dev_err(info->dev,
-			"%s %s ERR: %d\n", __func__, vreg_name, (int)reg);
+			"%s %s ERR: %zu\n", __func__, vreg_name, (intptr_t)reg);
 		err = PTR_ERR(reg);
 		reg = NULL;
 	} else
@@ -1392,7 +1392,7 @@ static void as364x_caps_layout(struct as364x_info *info)
 	}
 	info->torch_cap_size = AS364X_TORCH_CAP_TIMEOUT_SIZE;
 
-	dev_dbg(info->dev, "%s: %d(%d + %d), %d(%d + %d)\n", __func__,
+	dev_dbg(info->dev, "%s: %d(%zu + %zu), %d(%zu + %zu)\n", __func__,
 		info->flash_cap_size, as364x_flash_cap_size,
 		as364x_flash_timeout_size, info->torch_cap_size,
 		as364x_torch_cap_size, as364x_torch_timeout_size);
