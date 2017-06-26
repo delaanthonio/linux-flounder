@@ -1530,8 +1530,8 @@ static int max77387_regulator_get(struct max77387_info *info,
 
 	reg = regulator_get(info->dev, vreg_name);
 	if (unlikely(IS_ERR(reg))) {
-		dev_err(info->dev, "%s %s ERR: %d\n",
-			__func__, vreg_name, (int)reg);
+		dev_err(info->dev, "%s %s ERR: %zu\n",
+			__func__, vreg_name, (intptr_t)reg);
 		err = PTR_ERR(reg);
 		reg = NULL;
 	} else
@@ -1610,7 +1610,7 @@ static void max77387_caps_layout(struct max77387_info *info)
 	info->torch_timeouts[1] = start_ptr + max77387_torch_cap_size;
 
 	info->torch_cap_size = MAX77387_TORCH_CAP_TIMEOUT_SIZE;
-	dev_dbg(info->dev, "%s: %d(%d + %d), %d(%d + %d)\n", __func__,
+	dev_dbg(info->dev, "%s: %d(%zu + %zu), %d(%zu + %zu)\n", __func__,
 		info->flash_cap_size, max77387_flash_cap_size,
 		max77387_flash_timeout_size, info->torch_cap_size,
 		max77387_torch_cap_size, max77387_torch_timeout_size);
