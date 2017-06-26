@@ -255,8 +255,8 @@ static int ssl3250a_pm_regulator_get(struct ssl3250a_info *info,
 	sreg->vreg = regulator_get(&info->i2c_client->dev, vreg_name);
 	if (WARN_ON(IS_ERR(sreg->vreg))) {
 		dev_err(&info->i2c_client->dev,
-			"%s err for regulator: %s err: %d\n",
-			__func__, vreg_name, (int)sreg->vreg);
+			"%s err for regulator: %s err: %zd\n",
+			__func__, vreg_name, (intptr_t)sreg->vreg);
 		err = PTR_ERR(sreg->vreg);
 		sreg->vreg = NULL;
 	} else {
