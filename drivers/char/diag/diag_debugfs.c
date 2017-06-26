@@ -40,15 +40,15 @@ static ssize_t diag_dbgfs_read_status(struct file *file, char __user * ubuf, siz
 	}
 
 	ret = scnprintf(buf, DEBUG_BUF_SIZE,
-			"modem ch: 0x%x\n"
-			"lpass ch: 0x%x\n"
-			"riva ch: 0x%x\n"
-			"dci ch: 0x%x\n"
-			"modem cntl_ch: 0x%x\n"
-			"lpass cntl_ch: 0x%x\n"
-			"riva cntl_ch: 0x%x\n"
-			"modem cmd ch: 0x%x\n"
-			"dci cmd ch: 0x%x\n"
+			"modem ch: 0x%zu\n"
+			"lpass ch: 0x%zu\n"
+			"riva ch: 0x%zu\n"
+			"dci ch: 0x%zu\n"
+			"modem cntl_ch: 0x%zu\n"
+			"lpass cntl_ch: 0x%zu\n"
+			"riva cntl_ch: 0x%zu\n"
+			"modem cmd ch: 0x%zu\n"
+			"dci cmd ch: 0x%zu\n"
 			"CPU Tools id: %d\n"
 			"Apps only: %d\n"
 			"Apps master: %d\n"
@@ -109,15 +109,15 @@ static ssize_t diag_dbgfs_read_status(struct file *file, char __user * ubuf, siz
 			"Received Feature mask from WCNSS: %d\n"
 			"logging_mode: %d\n"
 			"real_time_mode: %d\n",
-			(unsigned int)driver->smd_data[MODEM_DATA].ch,
-			(unsigned int)driver->smd_data[LPASS_DATA].ch,
-			(unsigned int)driver->smd_data[WCNSS_DATA].ch,
-			(unsigned int)driver->smd_dci[MODEM_DATA].ch,
-			(unsigned int)driver->smd_cntl[MODEM_DATA].ch,
-			(unsigned int)driver->smd_cntl[LPASS_DATA].ch,
-			(unsigned int)driver->smd_cntl[WCNSS_DATA].ch,
-			(unsigned int)driver->smd_cmd[MODEM_DATA].ch,
-			(unsigned int)driver->smd_dci_cmd[MODEM_DATA].ch,
+			(uintptr_t)driver->smd_data[MODEM_DATA].ch,
+			(uintptr_t)driver->smd_data[LPASS_DATA].ch,
+			(uintptr_t)driver->smd_data[WCNSS_DATA].ch,
+			(uintptr_t)driver->smd_dci[MODEM_DATA].ch,
+			(uintptr_t)driver->smd_cntl[MODEM_DATA].ch,
+			(uintptr_t)driver->smd_cntl[LPASS_DATA].ch,
+			(uintptr_t)driver->smd_cntl[WCNSS_DATA].ch,
+			(uintptr_t)driver->smd_cmd[MODEM_DATA].ch,
+			(uintptr_t)driver->smd_dci_cmd[MODEM_DATA].ch,
 			chk_config_get_id(),
 			chk_apps_only(),
 			chk_apps_master(),
@@ -520,8 +520,8 @@ static ssize_t diag_dbgfs_read_bridge(struct file *file, char __user * ubuf, siz
 						  "in_busy_hsic_write: %d\n"
 						  "count_hsic_pool: %d\n"
 						  "count_hsic_write_pool: %d\n"
-						  "diag_hsic_pool: %x\n"
-						  "diag_hsic_write_pool: %x\n"
+						  "diag_hsic_pool: %zu\n"
+						  "diag_hsic_write_pool: %zu\n"
 						  "HSIC write_len: %d\n"
 						  "num_hsic_buf_tbl_entries: %d\n"
 						  "HSIC usb_connected: %d\n"
@@ -538,8 +538,8 @@ static ssize_t diag_dbgfs_read_bridge(struct file *file, char __user * ubuf, siz
 						  diag_hsic[i].in_busy_hsic_write,
 						  diag_hsic[i].count_hsic_pool,
 						  diag_hsic[i].count_hsic_write_pool,
-						  (unsigned int)diag_hsic[i].diag_hsic_pool,
-						  (unsigned int)diag_hsic[i].diag_hsic_write_pool,
+						  (uintptr_t)diag_hsic[i].diag_hsic_pool,
+						  (uintptr_t)diag_hsic[i].diag_hsic_write_pool,
 						  diag_bridge[i].write_len,
 						  diag_hsic[i].num_hsic_buf_tbl_entries,
 						  diag_bridge[i].usb_connected,
