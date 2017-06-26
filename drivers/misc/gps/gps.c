@@ -457,7 +457,7 @@ static ssize_t mt3332_store_pwrctl(struct device *dev, struct device_attribute *
 		if (!mt3332_gps_set_pwrctl(obj, pwrctl))
 			return count;
 	 }
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -505,7 +505,7 @@ static ssize_t mt3332_store_suspend(struct device *dev, struct device_attribute 
 				return count;
 		}
 	}
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -566,7 +566,7 @@ static ssize_t mt3332_store_status(struct device *dev, struct device_attribute *
 	}
 	if (!mt3332_gps_set_status(obj, buf, count))
 		return count;
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -609,7 +609,7 @@ static ssize_t mt3332_store_state(struct device *dev, struct device_attribute *a
 		if (!mt3332_gps_set_state(obj, state))
 			return count;
 	}
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -652,7 +652,7 @@ static ssize_t mt3332_store_pwrsave(struct device *dev, struct device_attribute 
 		if (!mt3332_gps_set_pwrsave(obj, pwrsave))
 			return count;
 	}
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -701,7 +701,7 @@ static ssize_t mt3332_store_rdelay(struct device *dev, struct device_attribute *
 		mutex_unlock(&obj->sem);
 		return count;
 	}
-	GPS_DBG("invalid content: '%s', length = %d\n", buf, count);
+	GPS_DBG("invalid content: '%s', length = %zu\n", buf, count);
 	return count;
 }
 /******************************************************************************/
@@ -825,7 +825,7 @@ static ssize_t mt3332_gps_read(struct file *file, char __user *buf, size_t count
 	/*data is available*/
 	copy_len = (dev->dat_len < (int)count) ? (dev->dat_len) : (int)(count);
 	if (copy_to_user(buf, dev->dat_buf+dev->dat_pos, (unsigned long)copy_len)) {
-		GPS_DBG("copy_to_user error: 0x%X 0x%X, %d\n", (unsigned int)buf, (unsigned int)dev->dat_buf, dev->dat_len);
+		GPS_DBG("copy_to_user error: 0x%zu 0x%zu, %d\n", (uintptr_t)buf, (uintptr_t)dev->dat_buf, dev->dat_len);
 		ret = -EFAULT;
 	} else {
 		GPS_VER("mt3332_gps_read(%d,%d,%d) = %d\n", count, dev->dat_pos, dev->dat_len, copy_len);
