@@ -876,7 +876,7 @@ static struct notifier_block hw_breakpoint_reset_nb = {
 };
 
 #ifdef CONFIG_CPU_PM
-static void hw_breakpoint_restore(void)
+static void hw_breakpoint_restore(__always_unused void *unused)
 {
 	int i;
 	struct perf_event **slots;
@@ -905,7 +905,7 @@ static int hw_breakpoint_cpu_pm_notify(struct notifier_block *self,
 				       void *v)
 {
 	if (action == CPU_PM_EXIT) {
-		hw_breakpoint_restore();
+		hw_breakpoint_restore(NULL);
 		return NOTIFY_OK;
 	}
 
