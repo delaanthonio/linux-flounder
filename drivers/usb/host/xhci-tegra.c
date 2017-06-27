@@ -4307,7 +4307,6 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 	unsigned pad;
 	u32 val;
 	int ret;
-	int irq;
 	const struct tegra_xusb_soc_config *soc_config;
 	const struct of_device_id *match;
 
@@ -4362,7 +4361,7 @@ static int tegra_xhci_probe(struct platform_device *pdev)
 	tegra->bdata->portmap = tegra->pdata->portmap;
 	tegra->bdata->hsic[0].pretend_connect =
 				tegra->pdata->pretend_connect_0;
-	if (tegra->bdata->portmap == NULL)
+	if (!tegra->bdata->portmap)
 		return -ENODEV;
 	tegra->bdata->lane_owner = tegra->pdata->lane_owner;
 	tegra->soc_config = soc_config;
