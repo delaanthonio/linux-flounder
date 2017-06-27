@@ -252,7 +252,7 @@ static void nvshieldled_disconnect(struct usb_interface *interface)
 	dev_info(&interface->dev, "Nvidia Shield LED disconnected\n");
 }
 
-static int nvshieldled_suspend(struct usb_interface *interface)
+static int nvshieldled_suspend(struct usb_interface *interface, pm_message_t msg)
 {
 	return 0;
 }
