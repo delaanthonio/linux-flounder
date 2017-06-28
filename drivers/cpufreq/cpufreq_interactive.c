@@ -1157,7 +1157,7 @@ static struct attribute *interactive_attributes_gov_pol[] = {
 	&boostpulse_gov_pol.attr,
 	&boostpulse_duration_gov_pol.attr,
 	&io_is_busy_gov_pol.attr,
-	&rt_priority_gov_sys.attr,
+	&rt_priority_gov_pol.attr,
 	NULL,
 };
 
