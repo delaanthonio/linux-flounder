@@ -757,9 +757,10 @@ static inline int f2fs_handle_error(struct f2fs_sb_info *sbi)
 {
 	if (test_opt(sbi, ERRORS_PANIC))
 		BUG();
-	if (test_opt(sbi, ERRORS_RECOVER))
+	if (test_opt(sbi, ERRORS_RECOVER)) {
 		sbi->need_fsck = true;
 		return 1;
+	}
 	return 0;
 }
 
