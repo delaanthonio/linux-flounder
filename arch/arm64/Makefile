@@ -27,9 +27,6 @@ GRAPHITE_FLAGS := \
 	-floop-block \
 
 DENVER_FLAGS := \
-	--param l1-cache-line-size=64 \
-	--param l1-cache-size=192 \
-	--param l2-cache-size=2048 \
 	-mtune=cortex-a57
 
 KERNEL_FLAGS := \
