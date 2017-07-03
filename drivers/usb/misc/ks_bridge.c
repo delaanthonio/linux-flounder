@@ -952,7 +952,7 @@ static struct usb_driver ksb_usb_driver = {
 	.supports_autosuspend = 1,
 };
 
-static ssize_t ksb_debug_show(struct seq_file *s, void *unused)
+static int ksb_debug_show(struct seq_file *s, void *unused)
 {
 	unsigned long		flags;
 	struct ks_bridge	*ksb = s->private;
