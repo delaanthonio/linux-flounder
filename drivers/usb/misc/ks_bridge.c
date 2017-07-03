@@ -1064,6 +1064,7 @@ dev_free:
 	for (i = 0; i < num_instances; i++) {
 		ksb = __ksb[i];
 
+		wake_lock_destroy(&ksb->ks_wake_lock);
 		destroy_workqueue(ksb->wq);
 		kfree(ksb->name);
 		kfree(ksb);
@@ -1086,14 +1087,12 @@ static void __exit ksb_exit(void)
 	if (!IS_ERR(dbg_dir))
 		debugfs_remove_recursive(dbg_dir);
 
-	//Destory ks wake lock
-	wake_lock_destroy(&ksb->ks_wake_lock);
-
 	usb_deregister(&ksb_usb_driver);
 
 	for (i = 0; i < NO_BRIDGE_INSTANCES; i++) {
 		ksb = __ksb[i];
 
+		wake_lock_destroy(&ksb->ks_wake_lock);
 		destroy_workqueue(ksb->wq);
 		kfree(ksb->name);
 		kfree(ksb);
