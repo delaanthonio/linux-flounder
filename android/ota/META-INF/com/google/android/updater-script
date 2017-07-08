@@ -14,6 +14,12 @@
 #     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 set_progress(0.0);
+ui_print(" ");
+
+ui_print("Confirming device flounder");
+assert(getprop("ro.product.device") == "flounder" || getprop("ro.build.product") == "flounder");
+ui_print("Success");
+
 ui_print("");
 ui_print("Installing Sublime 3.6");
 
