@@ -15,7 +15,7 @@
 
 set_progress(0.0);
 ui_print("");
-ui_print("Installing Sublime-N9 v3.x.x");
+ui_print("Installing Sublime 3.4");
 
 set_progress(0.1);
 
@@ -46,4 +46,4 @@ run_program("/tmp/busybox", "dd", "if=/tmp/newboot.img", "of=/dev/block/platform
 
 ui_print("");
 set_progress(1.0);
-ui_print("Sublime-N9 v3.x.x installed");
+ui_print("Installation complete");
