@@ -16,9 +16,9 @@
 set_progress(0.0);
 ui_print(" ");
 
-ui_print("Confirming device flounder");
+ui_print("Confirming device Flounder");
 assert(getprop("ro.product.device") == "flounder" || getprop("ro.build.product") == "flounder");
-ui_print("Success");
+ui_print("FLounder confirmed");
 
 ui_print("");
 ui_print("Installing Sublime 3.6");
