@@ -1,0 +1,34 @@
+{
+  "name": "linux-flounder-gh-pages",
+  "version": "1.0.0",
+  "description": "GitHub project page for linux-flounder",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "bootstrap-material-design": "^0.5.10"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.6.0",
+    "gulp-minify-css": "^1.2.4",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^3.1.0"
+  },
+  "scripts": {
+    "build": "gulp",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/beta1440/linux-flounder.git"
+  },
+  "keywords": [
+    "linux",
+    "flounder"
+  ],
+  "author": "Dela Anthonio",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/beta1440/linux-flounder/issues"
+  },
+  "homepage": "https://github.com/beta1440/linux-flounder#readme"
+}
