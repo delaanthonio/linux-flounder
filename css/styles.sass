@@ -1,15 +1,26 @@
 $normal_font_size: 14pt
 $page_width: 800px
+$page-color: #fff
+$shadow-color: #b0bec5
+$navbar-shadow-color: #90A4Ae
+
+
+#content-main
+  background-color: $page-color
+  height: 100%
+  margin-top: 0px
+  padding: 40px 60px
+
+.shadow
+  box-shadow: 0 4px 10px $shadow-color
 
 .container
   max-width: $page_width
 
-.navbar-brand
-  font:
-    size: 18pt
-    weight: bold
+.navbar
+  margin-bottom: 40px
+  /* padding-bottom: 0px
 
-nav
   li
     font:
       size: 18pt
@@ -18,6 +29,14 @@ nav
 
 li
   font-size: $normal_font_size
+
+.navbar-brand
+  font:
+    size: 18pt
+    weight: bold
+
+.navbar-shadow
+  box-shadow: 0 4px 8px $navbar-shadow-color
 
 p
   font-size: $normal_font_size
