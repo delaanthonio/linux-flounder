@@ -156,10 +156,9 @@ static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
 	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
+	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret != 1 || input > MAX_LOAD || input <= sa_tuners->down_threshold)
+	if (ret || input > MAX_LOAD || input <= sa_tuners->down_threshold)
 		return -EINVAL;
 
 	sa_tuners->up_threshold = input;
@@ -171,10 +170,9 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
 	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
+	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret != 1 || input < MIN_LOAD || input >= sa_tuners->up_threshold)
+	if (ret || input < MIN_LOAD || input >= sa_tuners->up_threshold)
 		return -EINVAL;
 
 	sa_tuners->down_threshold = input;
@@ -188,10 +186,9 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 
 	unsigned int input;
 	unsigned int cpu;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
+	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret != 1)
+	if (ret)
 		return -EINVAL;
 
 	for_each_possible_cpu(cpu)
@@ -216,12 +213,10 @@ static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data, const char *b
 					size_t count)
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
-
 	unsigned int input;
-	int ret;
-	ret = sscanf(buf, "%u", &input);
+	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret != 1 || input > MAX_TOUCHBOOST_TIMEOUT)
+	if (ret || input > MAX_TOUCHBOOST_TIMEOUT)
 		return -EINVAL;
 
 	sa_tuners->touchboost_timeout = input;
