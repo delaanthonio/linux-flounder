@@ -30,11 +30,13 @@
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
-static void sa_set_cpufreq_at_most(struct cpufreq_policy *policy, int freq) {
+static void sa_set_cpufreq_at_most(struct cpufreq_policy *policy, int freq)
+{
 	__cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_H);
 }
 
-static void sa_set_cpufreq_at_least(struct cpufreq_policy *policy, int freq) {
+static void sa_set_cpufreq_at_least(struct cpufreq_policy *policy, int freq)
+{
 	__cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_L);
 }
 
@@ -191,8 +193,7 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 	if (ret)
 		return -EINVAL;
 
-	for_each_possible_cpu(cpu)
-	{
+	for_each_possible_cpu(cpu) {
 		struct sa_cpu_dbs_info_s *const dbs_info =
 			&per_cpu(sa_cpu_dbs_info, cpu);
 		const struct cpufreq_policy *const policy =
@@ -209,8 +210,8 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 	return count;
 }
 
-static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data, const char *buf,
-					size_t count)
+static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data,
+					const char *buf, size_t count)
 {
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
 	unsigned int input;
@@ -268,10 +269,8 @@ static int sa_init(struct dbs_data *dbs_data)
 	struct sa_dbs_tuners *tuners;
 
 	tuners = kzalloc(sizeof(struct sa_dbs_tuners), GFP_KERNEL);
-	if (!tuners) {
-		pr_err("%s: kzalloc failed\n", __func__);
+	if (!tuners)
 		return -ENOMEM;
-	}
 	tuners->up_threshold = DEF_FREQ_UP_THRESHOLD;
 	tuners->down_threshold = DEF_FREQ_DOWN_THRESHOLD;
 	tuners->touchboost_min_freq = DEF_TOUCHBOOST_MIN_FREQ;
