@@ -25,8 +25,8 @@
 #define MAX_TOUCHBOOST_TIMEOUT		(4000 * USEC_PER_MSEC)	 /* 4000 ms */
 #define DISPLAY_ON_SAMPLING_RATE	(12 * USEC_PER_MSEC)	 /* 12   ms */
 #define DISPLAY_OFF_SAMPLING_RATE	(60 * USEC_PER_MSEC)	 /* 60   ms */
-#define MAX_LOAD			(100)
-#define MIN_LOAD			(11)
+#define MAX_LOAD			(100u)
+#define MIN_LOAD			(11u)
 
 static DEFINE_PER_CPU(struct sa_cpu_dbs_info_s, sa_cpu_dbs_info);
 
@@ -160,10 +160,10 @@ static ssize_t store_up_threshold(struct dbs_data *dbs_data, const char *buf,
 	unsigned int input;
 	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret || input > MAX_LOAD || input <= sa_tuners->down_threshold)
+	if (ret)
 		return -EINVAL;
 
-	sa_tuners->up_threshold = input;
+	sa_tuners->up_threshold = clamp(input, sa_tuners->down_threshold, MAX_LOAD);
 	return count;
 }
 
@@ -177,7 +177,7 @@ static ssize_t store_down_threshold(struct dbs_data *dbs_data, const char *buf,
 	if (ret || input < MIN_LOAD || input >= sa_tuners->up_threshold)
 		return -EINVAL;
 
-	sa_tuners->down_threshold = input;
+	sa_tuners->down_threshold = clamp(input, MIN_LOAD, sa_tuners->up_threshold);
 	return count;
 }
 
@@ -199,11 +199,7 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 		const struct cpufreq_policy *const policy =
 			dbs_info->cdbs.cur_policy;
 
-		if (input < policy->min)
-			input = policy->min;
-
-		else if (input > policy->max)
-			input = policy->max;
+		input = clamp(input, policy->min, policy->max);
 	}
 
 	sa_tuners->touchboost_min_freq = input;
@@ -217,10 +213,12 @@ static ssize_t store_touchboost_timeout(struct dbs_data *dbs_data,
 	unsigned int input;
 	int ret = kstrtouint(buf, 0, &input);
 
-	if (ret || input > MAX_TOUCHBOOST_TIMEOUT)
+	if (ret)
 		return -EINVAL;
 
-	sa_tuners->touchboost_timeout = input;
+	sa_tuners->touchboost_timeout =
+		clamp_t(u32, input, 0, MAX_TOUCHBOOST_TIMEOUT);
+
 	return count;
 }
 
