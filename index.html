@@ -1,97 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="">
-  <meta name="author" content="Dela Anthonio">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Dela Anthonio">
 
-  <title>Linux Flounder</title>
+    <title>Linux Flounder</title>
 
-  <!-- Bootstrap Core CSS -->
-  <link href="css/bootstrap.min.css" rel="stylesheet">
-  <link href="css/bootstrap-material-design.css" rel="stylesheet">
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-material-design.css" rel="stylesheet">
 
-  <!-- Custom CSS -->
-  <link href="css/styles.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="css/styles.min.css" rel="stylesheet">
 
-  <!-- <link href="css/logo-nav.css" rel="stylesheet"> -->
+    <!-- <link href="css/logo-nav.css" rel="stylesheet"> -->
 
-  <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-  <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-        <![endif]-->
-</head>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
 
-<body>
-  <!-- Navigation -->
-  <nav class="navbar navbar-shadow">
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-shadow">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <a class="navbar-brand" href="index.html">Sublime Linux</a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <li>
+              <a href="#">Benchmarks</a>
+            </li>
+          </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+      </div>
+      <!-- /.container -->
+    </nav>
+
+    <!-- Page Content -->
     <div class="container">
-      <!-- Brand and toggle get grouped for better mobile display -->
-      <div class="navbar-header">
-        <a class="navbar-brand" href="index.html">Sublime Linux</a>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <h2 class="">About</h2>
+              <p>This is my custom kernel for the <a href="https://en.wikipedia.org/wiki/Nexus_9">Nexus 9 Android tablet</a> (codenamed Flounder) developed by Google and HTC. It's based on the
+                <a href="https://forum.xda-developers.com/nexus-9/orig-development/kernel-elementalx-n9-0-02-alpha-t2931657">Elementalx</a> kernel developed by <a href="http://elementalx.org/about/">flar2</a>. My goal with this kernel is to improve performance, battery life and stability.
+              </p>
+            </div>
+          </div>
+
+          <div class="panel panel-primary">
+            <div class="panel-body">
+              <h2>Features</h2>
+              <ul>
+                <li> Sublime Active CPU frequency governor </li>
+                <li> Sublime Quiet CPU quiet governor </li>
+                <li> Latest BFQ I/O scheduler </li>
+                <li> Optimized ZRAM </li>
+                <li> 2.0 Amp charging </li>
+                <li> USB fast-charge (optional) </li>
+                <li> Sweep 2 Wake </li>
+                <li> Sweep 2 Sleep </li>
+                <li> CPU overclocking up to 2.5 Ghz (optional) </li>
+                <li> GPU overclocking up to 9.8 Ghz (optional) </li>
+                <li> NTFS and exFAT support </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="panel panel-primary">
+            <div class="panel-body">
+              <h2>Download</h2>
+              <ul>
+                <li><a href="https://github.com/beta1440/linux-flounder/releases">Github</a></li>
+                <li><a href="https://forum.xda-developers.com/devdb/project/?id=10560#downloads">XDA</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="panel panel-primary">
+            <div class="panel-body">
+              <h2>Installation</h2>
+              <ul>
+                <li>Boot into TWRP</li>
+                <li>If using a custom kernel, reinstall your ROM</li>
+                <li>Install Sublime kernel</li>
+                <li>Reboot</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
-      <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-        <ul class="nav navbar-nav">
-          <li>
-            <a href="#">Benchmarks</a>
-          </li>
-        </ul>
-      </div>
-      <!-- /.navbar-collapse -->
     </div>
     <!-- /.container -->
-  </nav>
 
-  <!-- Page Content -->
-  <div class="container shadow" id="content-main">
-    <div class="row">
-      <div class="col-lg-12">
-        <h1 class="header">About</h1>
-        <p>This is my custom kernel for the <a href="https://en.wikipedia.org/wiki/Nexus_9">Nexus 9 Android tablet</a> (codenamed Flounder) developed by Google and HTC. It's based on the
-          <a href="https://forum.xda-developers.com/nexus-9/orig-development/kernel-elementalx-n9-0-02-alpha-t2931657">Elementalx</a> kernel developed by <a href="http://elementalx.org/about/">flar2</a>. My goal with this kernel is to improve performance, battery life and stability.
-        </p>
-        <h2>Features</h2>
-        <ul>
-          <li> Sublime Active CPU frequency governor </li>
-          <li> Sublime Quiet CPU quiet governor </li>
-          <li> Latest BFQ I/O scheduler </li>
-          <li> Optimized ZRAM </li>
-          <li> 2.0 Amp charging </li>
-          <li> USB fast-charge (optional) </li>
-          <li> Sweep 2 Wake </li>
-          <li> Sweep 2 Sleep </li>
-          <li> CPU overclocking up to 2.5 Ghz (optional) </li>
-          <li> GPU overclocking up to 9.8 Ghz (optional) </li>
-          <li> NTFS and exFAT support </li>
-        </ul>
-        <h2>Download</h2>
-        <ul>
-          <li><a href="https://github.com/beta1440/linux-flounder/releases">Github</a></li>
-          <li><a href="https://forum.xda-developers.com/devdb/project/?id=10560#downloads">XDA</a></li>
-        </ul>
-        <h2>Installation</h2>
-        <ul>
-          <li>Boot into TWRP</li>
-          <li>If using a custom kernel, reinstall your ROM</li>
-          <li>Install Sublime kernel</li>
-          <li>Reboot</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <!-- /.container -->
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
 
-  <!-- jQuery -->
-  <script src="js/jquery.js"></script>
-
-  <!-- Bootstrap Core JavaScript -->
-  <script src="js/bootstrap.min.js"></script>
-</body>
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+  </body>
 
 </html>
