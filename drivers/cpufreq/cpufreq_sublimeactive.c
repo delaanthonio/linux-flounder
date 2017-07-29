@@ -112,7 +112,7 @@ static int sa_display_notifier_callback(struct notifier_block *nb,
 					unsigned long display_state, void *data)
 {
 	unsigned int sampling_rate;
-	unsigned int cpu;
+	int cpu;
 
 	switch (display_state) {
 	case DISPLAY_ON:
@@ -187,7 +187,7 @@ static ssize_t store_touchboost_min_freq(struct dbs_data *dbs_data,
 	struct sa_dbs_tuners *const sa_tuners = dbs_data->tuners;
 
 	unsigned int input;
-	unsigned int cpu;
+	int cpu;
 	int ret = kstrtouint(buf, 0, &input);
 
 	if (ret)
