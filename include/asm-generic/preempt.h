@@ -1,6 +1,7 @@
 #ifndef __ASM_PREEMPT_H
 #define __ASM_PREEMPT_H
 
+#include <linux/preempt.h>
 #include <linux/thread_info.h>
 
 /*
