@@ -743,9 +743,10 @@ static int regulator_start(struct dev_data *dd)
 	if (!regulator_is_enabled(dd->reg_dvdd) &&
 	    (ret = regulator_enable(dd->reg_dvdd)) < 0) {
 		ERROR("Failed to enable regulator dvdd: %d", ret);
-		usleep_range(1000, 1020);
 		return ret;
 	}
+
+	usleep_range(1000, 1020);
 
 	if (!regulator_is_enabled(dd->reg_avdd) &&
 	    (ret = regulator_enable(dd->reg_avdd)) < 0) {
