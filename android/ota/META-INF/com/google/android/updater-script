@@ -15,7 +15,7 @@
 
 set_progress(0.0);
 ui_print("");
-ui_print("Installing Sublime 3.5");
+ui_print("Installing Sublime 3.6");
 
 set_progress(0.1);
 
