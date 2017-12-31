@@ -1,0 +1,27 @@
+language: c
+sudo: false
+dist: trusty
+
+git:
+  depth: false
+
+addons:
+  apt:
+    packages:
+      - bc
+
+env:
+  global:
+    - ARCH=arm64
+
+compiler:
+  - aarch64-linux-android-gcc
+
+before_script:
+  - git clone https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 $(pwd)/aarch64-linux-android-4.9 -b master --depth 1
+  - export PATH=$(pwd)/aarch64-linux-android-4.9/bin:$PATH
+  - export CROSS_COMPILE=$(pwd)/aarch64-linux-android-4.9/bin/aarch64-linux-android-
+
+script:
+  - make defconfig
+  - make otapackage -j2 > /dev/null
