@@ -97,7 +97,7 @@ local_version := $(shell echo $(CONFIG_LOCALVERSION) | cut -d '"' -f2 - | cut -c
 otapackage_name := $(local_version).zip
 
 # Directory to store OTA package files
-KBUILD_FLOUNDER_OUTPUT ?= android
+KBUILD_FLOUNDER_OUTPUT ?= $(shell pwd)/android
 
 # Path to OTA package
 output := $(KBUILD_FLOUNDER_OUTPUT)/$(otapackage_name)
