@@ -2829,7 +2829,7 @@ static int tegra_udc_ep_setup(struct tegra_udc *udc)
 	/* setup the udc->eps[] for non-control endpoints and link
 	 * to gadget.ep_list */
 	for (i = 1; i < (int)(udc->max_ep / 2); i++) {
-		char name[14];
+		char name[16];
 
 		sprintf(name, "ep%dout", i);
 		struct_ep_setup(udc, i * 2, name, 1);

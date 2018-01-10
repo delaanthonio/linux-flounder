@@ -410,7 +410,7 @@ struct tegra_ep {
 	struct ep_td_struct *last_td;
 	int last_dtd_count;
 
-	char name[14];
+	char name[16];
 	unsigned stopped:1;
 };
 
