@@ -17,33 +17,15 @@ GZFLAGS		:=-9
 
 KBUILD_DEFCONFIG := sublime_defconfig
 
-GRAPHITE_FLAGS := \
-	-fgraphite \
-	-fgraphite-identity \
-	-floop-flatten \
-	-ftree-loop-linear \
-	-floop-interchange \
-	-floop-strip-mine \
-	-floop-block \
+KBUILD_CFLAGS += $(call cc-option,-march=armv8-a) \
+                 $(call cc-option,-mtune=generic)
 
-DENVER_FLAGS := \
-	-mtune=cortex-a57
+KBUILD_CFLAGS += $(call cc-option,--param l1-cache-line-size=64) \
+                 $(call cc-option,--param l1-cache-size=64) \
+                 $(call cc-option,--param l2-cache-size=2048)
 
-KERNEL_FLAGS := \
-        $(DENVER_FLAGS) \
-        -fsingle-precision-constant  \
-        -Wno-error=maybe-uninitialized \
-        -Wno-error=array-bounds \
-
-ifeq ($(CONFIG_ENABLE_GRAPHITE), y)
-KERNEL_FLAGS += $(GRAPHITE_FLAGS)
-endif
-
-ifeq ($(CONFIG_ENABLE_LEAK_SANITIZER), y)
-KERNEL_FLAGS += -fsanitize=leak
-endif
-
-KBUILD_CFLAGS	+= -mgeneral-regs-only $(KERNEL_FLAGS)
+KBUILD_CFLAGS	+= -fsingle-precision-constant
+KBUILD_CFLAGS	+= -mgeneral-regs-only
 KBUILD_CFLAGS	+= -fno-pic
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
