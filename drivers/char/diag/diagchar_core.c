@@ -1067,7 +1067,7 @@ long diagchar_ioctl(struct file *filp, unsigned int iocmd, unsigned long ioarg)
 	return result;
 }
 
-static ssize_t diagchar_read(struct file *file, char __user * buf, size_t count, loff_t * ppos)
+static int diagchar_read(struct file *file, char __user * buf, size_t count, loff_t * ppos)
 {
 	struct diag_dci_client_tbl *entry;
 	int index = -1, i = 0, ret = 0, timeout = 0;
@@ -1448,7 +1448,7 @@ exit:
 	return ret;
 }
 
-static ssize_t diagchar_write(struct file *file, const char __user * buf, size_t count, loff_t * ppos)
+static int diagchar_write(struct file *file, const char __user * buf, size_t count, loff_t * ppos)
 {
 	int err, ret = 0, pkt_type, token_offset = 0;
 	int remote_proc = 0;
