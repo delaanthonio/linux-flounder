@@ -1064,7 +1064,6 @@ dev_free:
 	for (i = 0; i < num_instances; i++) {
 		ksb = __ksb[i];
 
-		wake_lock_destroy(&ksb->ks_wake_lock);
 		destroy_workqueue(ksb->wq);
 		kfree(ksb->name);
 		kfree(ksb);
