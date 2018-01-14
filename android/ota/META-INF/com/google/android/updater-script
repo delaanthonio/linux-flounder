@@ -21,7 +21,7 @@ assert(getprop("ro.product.device") == "flounder" || getprop("ro.build.product")
 ui_print("FLounder confirmed");
 
 ui_print("");
-ui_print("Installing Sublime 3.6");
+ui_print("Installing Sublime 3.7");
 
 set_progress(0.1);
 
