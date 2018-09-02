@@ -1698,7 +1698,7 @@ static void service_irq_legacy_acceleration(struct dev_data *dd)
 static void service_irq(struct dev_data *dd)
 {
 	struct fu_async_data  *async_data;
-	u16                   status, clear, test, address[2] = {0}, xbuf;
+	u16                   status, clear, test, address[2], xbuf;
 	bool                  read_buf[2] = {true, false};
 	int                   ret, ret2;
 
