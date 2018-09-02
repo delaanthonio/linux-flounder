@@ -732,60 +732,53 @@ static void enable_double_tap(struct dev_data *dd)
 }
 #endif
 
-static int regulator_start(struct dev_data *dd)
+static int regulator_control(struct dev_data *dd, bool on)
 {
 	int ret = 0;
 
 	if (!dd->reg_avdd || !dd->reg_dvdd)
 		return 0;
 
-	if (!regulator_is_enabled(dd->reg_dvdd) &&
-	    (ret = regulator_enable(dd->reg_dvdd)) < 0) {
-		ERROR("Failed to enable regulator dvdd: %d", ret);
+	if (on) {
+		ret = regulator_enable(dd->reg_dvdd);
+		if (ret < 0) {
+			ERROR("Failed to enable regulator dvdd: %d", ret);
+			return ret;
+		}
 		usleep_range(1000, 1020);
-		return ret;
-	}
 
-	if (!regulator_is_enabled(dd->reg_avdd) &&
-	    (ret = regulator_enable(dd->reg_avdd)) < 0) {
-		ERROR("Failed to enable regulator avdd: %d", ret);
-		regulator_disable(dd->reg_dvdd);
-		return ret;
-	}
+		ret = regulator_enable(dd->reg_avdd);
+		if (ret < 0) {
+			ERROR("Failed to enable regulator avdd: %d", ret);
+			regulator_disable(dd->reg_dvdd);
+			return ret;
+		}
+		if (prev_dvdd_rail_state == 0)
+			atomic_set(&touch_dvdd_on, 1);
 
-	if (prev_dvdd_rail_state == 0)
-		atomic_set(&touch_dvdd_on, 1);
-
-	prev_dvdd_rail_state = 1;
-
-	return 0;
-}
-
-static int regulator_stop(struct dev_data *dd)
-{
-	int ret = 0;
-
-	if (!dd->reg_avdd || !dd->reg_dvdd)
-		return 0;
-
-	if (regulator_is_enabled(dd->reg_avdd) &&
-	    (ret = regulator_disable(dd->reg_avdd)) < 0) {
-		ERROR("Failed to disable regulator avdd: %d", ret);
-		return ret;
-	}
-
-	if (regulator_is_enabled(dd->reg_dvdd) &&
-	    (ret = regulator_disable(dd->reg_dvdd)) < 0) {
-		ERROR("Failed to disable regulator dvdd: %d", ret);
-		regulator_enable(dd->reg_avdd);
-		return ret;
-	}
-
-	if (!regulator_is_enabled(dd->reg_dvdd)) {
-		prev_dvdd_rail_state = 0;
-		msleep(200);
-	} else
 		prev_dvdd_rail_state = 1;
+	} else {
+		if (regulator_is_enabled(dd->reg_avdd))
+			ret = regulator_disable(dd->reg_avdd);
+		if (ret < 0) {
+			ERROR("Failed to disable regulator avdd: %d", ret);
+			return ret;
+		}
+
+		if (regulator_is_enabled(dd->reg_dvdd))
+			ret = regulator_disable(dd->reg_dvdd);
+		if (ret < 0) {
+			ERROR("Failed to disable regulator dvdd: %d", ret);
+			regulator_enable(dd->reg_avdd);
+			return ret;
+		}
+
+		if (!regulator_is_enabled(dd->reg_dvdd)) {
+			prev_dvdd_rail_state = 0;
+			msleep(200);
+		} else
+			prev_dvdd_rail_state = 1;
+	}
 
 	return 0;
 }
@@ -1002,7 +995,6 @@ static int late_resume(struct device *dev)
 	return 0;
 }
 
-#if DOUBLE_TAP
 static int suspend(struct device *dev)
 {
 	struct dev_data  *dd = spi_get_drvdata(to_spi_device(dev));
@@ -1033,7 +1025,6 @@ static const struct dev_pm_ops pm_ops = {
 	.suspend = suspend,
 	.resume = resume,
 };
-#endif
 
 #if INPUT_ENABLE_DISABLE
 static int input_disable(struct input_dev *dev)
@@ -1893,7 +1884,7 @@ static int processing_thread(void *arg)
 			/* reset-low and power-down */
 			pdata->reset(pdata, 0);
 			usleep_range(100, 120);
-			regulator_stop(dd);
+			regulator_control(dd, false);
 #endif
 			dd->expect_resume_ack = true;
 			complete(&dd->suspend_resume);
@@ -1912,7 +1903,7 @@ static int processing_thread(void *arg)
 			/* power-up and reset-high */
 			pdata->reset(pdata, 0);
 #if SUSPEND_POWER_OFF
-			regulator_start(dd);
+			regulator_control(dd, true);
 #endif
 			usleep_range(300, 400);
 			pdata->reset(pdata, 1);
@@ -2058,7 +2049,7 @@ static int probe(struct spi_device *spi)
 		goto platform_failure;
 
 	/* power-up and reset-high */
-	ret = regulator_start(dd);
+	ret = regulator_control(dd, true);
 	if (ret < 0)
 		goto platform_failure;
 	usleep_range(300, 400);
@@ -2187,7 +2178,7 @@ static int remove(struct spi_device *spi)
 
 	pdata->reset(pdata, 0);
 	usleep_range(100, 120);
-	regulator_stop(dd);
+	regulator_control(dd, false);
 	pdata->init(pdata, false);
 
 	kfree(dd);
@@ -2205,7 +2196,7 @@ static void shutdown(struct spi_device *spi)
 
 	pdata->reset(pdata, 0);
 	usleep_range(100, 120);
-	regulator_stop(dd);
+	regulator_control(dd, false);
 }
 
 /****************************************************************************\
