@@ -3748,7 +3748,7 @@ tegra_xhci_resume(struct platform_device *pdev)
 {
 	struct tegra_xhci_hcd *tegra = platform_get_drvdata(pdev);
 	struct xhci_hcd *xhci = tegra->xhci;
-	int ret;
+	int ret = 0;
 
 	dev_dbg(&pdev->dev, "%s\n", __func__);
 
@@ -3770,29 +3770,18 @@ tegra_xhci_resume(struct platform_device *pdev)
 
 	ret = regulator_enable(tegra->xusb_s1p05v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s1p05v failed\n", __func__);
-		goto put_xusb_s1p05v_reg;
+		dev_err(&pdev->dev, "%s: enable xusb_s1p05v_reg failed\n", __func__);
 	}
 	ret = regulator_enable(tegra->xusb_s1p8v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s1p8v failed\n", __func__);
-		goto put_xusb_s1p8v_reg;
+		dev_err(&pdev->dev, "%s: enable xusb_s1p8v_reg failed\n", __func__);
 	}
 	ret = regulator_enable(tegra->xusb_s3p3v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s1p8v failed\n", __func__);
-		goto put_xusb_s1p05v_reg;
+		dev_err(&pdev->dev, "%s: enable xusb_s3p3v_reg failed\n", __func__);
 	}
 	ret = tegra_usb2_clocks_init(tegra);
 
-	return ret;
-
- xusb_s3p3v_reg:
-	regulator_disable(tegra->xusb_s3p3v_reg);
- put_xusb_s1p8v_reg:
-	regulator_disable(tegra->xusb_s1p8v_reg);
- put_xusb_s1p05v_reg:
-	regulator_disable(tegra->xusb_s1p05v_reg);
 	return ret;
 }
 #endif
