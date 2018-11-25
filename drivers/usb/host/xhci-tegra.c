@@ -3770,15 +3770,15 @@ tegra_xhci_resume(struct platform_device *pdev)
 
 	ret = regulator_enable(tegra->xusb_s1p05v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s1p05v_reg failed\n", __func__);
+		xhci_err(xhci, "%s: enable xusb_s1p05v_reg failed\n", __func__);
 	}
 	ret = regulator_enable(tegra->xusb_s1p8v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s1p8v_reg failed\n", __func__);
+		xhci_err(xhci, "%s: enable xusb_s1p8v_reg failed\n", __func__);
 	}
 	ret = regulator_enable(tegra->xusb_s3p3v_reg);
 	if (ret < 0) {
-		dev_err(&pdev->dev, "%s: enable xusb_s3p3v_reg failed\n", __func__);
+		xhci_err(xhci, "%s: enable xusb_s3p3v_reg failed\n", __func__);
 	}
 	ret = tegra_usb2_clocks_init(tegra);
 
