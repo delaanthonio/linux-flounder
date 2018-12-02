@@ -3780,9 +3780,9 @@ tegra_xhci_resume(struct platform_device *pdev)
 	if (ret < 0) {
 		xhci_err(xhci, "%s: enable xusb_s3p3v_reg failed\n", __func__);
 	}
-	ret = tegra_usb2_clocks_init(tegra);
+	tegra_usb2_clocks_init(tegra);
 
-	return ret;
+	return 0;
 }
 #endif
 
