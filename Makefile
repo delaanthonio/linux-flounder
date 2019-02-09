@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 10
-SUBLEVEL = 103
-EXTRAVERSION = -Nougat
-NAME = TOSSUG Baby Fish
+SUBLEVEL = 108
+EXTRAVERSION =
+NAME = END-OF-LIFE
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
