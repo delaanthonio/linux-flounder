@@ -34,6 +34,8 @@
 #define DEF_UP_DELAY		(100)
 #define DEF_DOWN_DELAY		(2000)
 #define DEF_LOAD_SAMPLE_RATE	(20) /* msec */
+#define DEF_IDLE_TOP_FREQ	(1020 * 1000) /* kHz */
+#define DEF_IDLE_BOT_FREQ	(663 * 1000) /* kHz */
 
 typedef enum {
 	CPU_SPEED_BALANCED,
@@ -519,8 +521,8 @@ static int balanced_start(void)
 	if (count < 4)
 		return -EINVAL;
 
-	idle_top_freq = table[(count / 2) - 1].frequency;
-	idle_bottom_freq = table[(count / 2) - 2].frequency;
+	idle_top_freq = DEF_IDLE_TOP_FREQ;
+	idle_bottom_freq = DEF_IDLE_BOT_FREQ;
 
 	cpufreq_register_notifier(&balanced_cpufreq_nb,
 		CPUFREQ_TRANSITION_NOTIFIER);
