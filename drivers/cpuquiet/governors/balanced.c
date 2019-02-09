@@ -316,7 +316,6 @@ static void balanced_work_func(struct work_struct *work)
 		cpu = get_slowest_cpu_n();
 		if (cpu < nr_cpu_ids) {
 			up = false;
-            balanced_queue_delayed_work(up_delay);
 		} else
 			stop_load_timer();
 		break;
@@ -341,7 +340,6 @@ static void balanced_work_func(struct work_struct *work)
 		default:
 			break;
 		}
-		balanced_queue_delayed_work(up_delay);
 		break;
 	default:
 		pr_err("%s: invalid cpuquiet balanced governor state %d\n",
