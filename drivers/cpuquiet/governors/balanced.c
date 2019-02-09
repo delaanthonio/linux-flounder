@@ -29,10 +29,10 @@
 #include <linux/tick.h>
 #include <asm/cputime.h>
 
-#define CPUNAMELEN (8)
-#define DEF_BALANCE_LEVEL		(30)
-#define DEF_UP_DELAY		(20)
-#define DEF_DOWN_DELAY		(1000)
+#define CPUNAMELEN		(8)
+#define DEF_BALANCE_LEVEL	(50)
+#define DEF_UP_DELAY		(100)
+#define DEF_DOWN_DELAY		(2000)
 #define DEF_LOAD_SAMPLE_RATE	(20) /* msec */
 
 typedef enum {
