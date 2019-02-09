@@ -290,7 +290,7 @@ static CPU_SPEED_BALANCE balanced_speed_balance(void)
 	}
 	nr_run_last = nr_run;
 
-	if (count_slow_cpus(skewed_speed) >= 2 || nr_cpus > max_cpus ||
+	if (count_slow_cpus(skewed_speed) >= 1 || nr_cpus > max_cpus ||
 		nr_run < nr_cpus)
 		return CPU_SPEED_SKEWED;
 
