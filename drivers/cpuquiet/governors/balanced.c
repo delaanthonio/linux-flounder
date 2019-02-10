@@ -499,8 +499,7 @@ static void balanced_stop(void)
 
 static int balanced_start(void)
 {
-	int err, count;
-	struct cpufreq_frequency_table *table;
+	int err;
 	struct cpufreq_freqs initial_freq;
 
 	err = balanced_sysfs();
@@ -511,15 +510,6 @@ static int balanced_start(void)
 
 	up_delay = msecs_to_jiffies(DEF_UP_DELAY);
 	down_delay = msecs_to_jiffies(DEF_DOWN_DELAY);
-
-	table = cpufreq_frequency_get_table(0);
-	if (!table)
-		return -EINVAL;
-
-	for (count = 0; table[count].frequency != CPUFREQ_TABLE_END; count++);
-
-	if (count < 4)
-		return -EINVAL;
 
 	idle_top_freq = DEF_IDLE_TOP_FREQ;
 	idle_bottom_freq = DEF_IDLE_BOT_FREQ;
