@@ -17,12 +17,10 @@ GZFLAGS		:=-9
 
 KBUILD_DEFCONFIG := sublime_defconfig
 
-KBUILD_CFLAGS += $(call cc-option,-march=armv8-a) \
-                 $(call cc-option,-mtune=generic)
-
-KBUILD_CFLAGS += $(call cc-option,--param l1-cache-line-size=64) \
-                 $(call cc-option,--param l1-cache-size=64) \
-                 $(call cc-option,--param l2-cache-size=2048)
+KBUILD_CFLAGS += $(call cc-option,-mtune=cortex-a57)
+KBUILD_CFLAGS += $(call cc-option,--param l1-cache-line-size=64)
+KBUILD_CFLAGS += $(call cc-option,--param l1-cache-size=64)
+KBUILD_CFLAGS += $(call cc-option,--param l2-cache-size=2048)
 
 KBUILD_CFLAGS	+= -fsingle-precision-constant
 KBUILD_CFLAGS	+= -mgeneral-regs-only
