@@ -16,12 +16,12 @@
 set_progress(0.0);
 ui_print(" ");
 
-ui_print("Confirming device Flounder");
+ui_print("Verifying device is Nexus 9");
 assert(getprop("ro.product.device") == "flounder" || getprop("ro.build.product") == "flounder");
-ui_print("FLounder confirmed");
+ui_print("Confirmed device is Nexus 9");
 
 ui_print("");
-ui_print("Installing Sublime 3.7");
+ui_print("Installing Sublime 3.8");
 
 set_progress(0.1);
 

@@ -1,5 +1,5 @@
 #
-# Linux/arm64 3.10.103 Kernel Configuration
+# Linux/arm64 3.10.108 Kernel Configuration
 #
 
 CONFIG_ARM64=y
@@ -39,7 +39,7 @@ CONFIG_IRQ_WORK=y
 #
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_CROSS_COMPILE="aarch64-linux-android-"
-CONFIG_LOCALVERSION="-Sublime-Flounder-3.7"
+CONFIG_LOCALVERSION="-Nougat-Sublime-Flounder-3.8"
 # CONFIG_LOCALVERSION_AUTO is not set
 CONFIG_DEFAULT_HOSTNAME=""
 CONFIG_SWAP=y
