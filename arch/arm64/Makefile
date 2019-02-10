@@ -66,7 +66,7 @@ endif
 
 KBUILD_DTBS	:= dtbs
 
-all:	otapackage $(KBUILD_IMAGE) $(KBUILD_DTBS)
+all:	$(KBUILD_IMAGE) $(KBUILD_DTBS) otapackage
 
 boot := arch/arm64/boot
 
