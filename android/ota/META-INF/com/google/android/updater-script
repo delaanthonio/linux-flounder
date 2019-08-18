@@ -21,7 +21,7 @@ assert(getprop("ro.product.device") == "flounder" || getprop("ro.build.product")
 ui_print("Confirmed device is Nexus 9");
 
 ui_print("");
-ui_print("Installing Sublime 3.8");
+ui_print("Installing Sublime 3.9");
 
 set_progress(0.1);
 
